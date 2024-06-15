@@ -36,12 +36,26 @@ impl KanpyoCommand {
 
 fn print_tokens(tokens: Vec<kanpyo::token::Token>, dict: &dict::Dict) {
     for token in tokens {
-        let mut morph_features = vec![];
-        if token.id != BOS_EOS_ID {
-            for idx in dict.pos_table.morph_features[token.id as usize - 1].iter() {
-                morph_features.push(dict.pos_table.name_list[*idx as usize].clone());
+        let morph_features = if token.id != BOS_EOS_ID {
+            let mut features = vec![];
+            match token.class {
+                kanpyo::token::TokenClass::Known => {
+                    for idx in dict.pos_table.morph_features[token.id as usize - 1].iter() {
+                        features.push(dict.pos_table.name_list[*idx as usize].clone());
+                    }
+                }
+                kanpyo::token::TokenClass::Unknown => {
+                    // 8 *
+                    for _ in 0..8 {
+                        features.push("*".to_string());
+                    }
+                }
+                kanpyo::token::TokenClass::Dummy => {}
             }
-        }
+            features
+        } else {
+            vec![]
+        };
         println!("{}\t{}", token.surface, morph_features.join(","))
     }
 }

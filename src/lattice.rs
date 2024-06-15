@@ -23,9 +23,15 @@ impl<'a> Lattice<'a> {
         let mut byte_pos = 0;
         let mut la = Lattice::new(dict, input);
         la.add_bos_node();
+        const MAXIMUM_UNKNOWN_WORD_LENGTH: usize = 1024;
+
+        let unknown_id = -1;
         for (char_pos, ch) in input.chars().enumerate() {
+            let mut any_match = false;
+            // Known words
             let text = input.get(byte_pos..).expect("byte_pos is out of range");
             if let Some(ids_and_byte_lenghts) = dict.index.search_common_prefix_of(text) {
+                any_match = true;
                 for (id, byte_length) in ids_and_byte_lenghts {
                     let surface = input
                         .get(byte_pos..byte_pos + byte_length)
@@ -33,6 +39,33 @@ impl<'a> Lattice<'a> {
                     la.add_node(id, byte_pos, char_pos, NodeClass::Known, Some(surface));
                 }
             }
+            let char_category = dict.char_category_def.char_category(ch);
+            if !any_match || dict.char_category_def.invoke_list[char_category as usize] {
+                // Unknown words
+                let is_group = *dict
+                    .char_category_def
+                    .group_list
+                    .get(char_category as usize)
+                    .unwrap_or(&false);
+                let mut end_byte_pos = byte_pos + ch.len_utf8();
+                let mut unknown_word_length = 1;
+                if is_group {
+                    for ch in input[end_byte_pos..].chars() {
+                        if dict.char_category_def.char_category(ch) != char_category {
+                            break;
+                        }
+                        end_byte_pos += ch.len_utf8();
+                        unknown_word_length += 1;
+                        if unknown_word_length >= MAXIMUM_UNKNOWN_WORD_LENGTH {
+                            break;
+                        }
+                    }
+                }
+                let surface = input
+                    .get(byte_pos..end_byte_pos);                    
+                la.add_node(unknown_id, byte_pos, char_pos, NodeClass::Unknown, surface);
+            }
+
             byte_pos += ch.len_utf8();
         }
         la.add_eos_node(input);
@@ -65,7 +98,7 @@ impl<'a> Lattice<'a> {
                     dp[i].map_or(true, |c| total_cost < c).then(|| {
                         dp[i] = Some(total_cost);
                         pre_nodes[i] = Some(j);
-                    });                
+                    });
                 }
             }
         }

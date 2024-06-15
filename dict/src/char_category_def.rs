@@ -28,6 +28,11 @@ impl CharCategoryDef {
             group_list: char_def.group_map.to_vec(),
         }
     }
+
+    // char_category returns a category of a char.
+    pub fn char_category(&self, ch: char) -> u8 {
+        *self.char_category.get(ch as usize).unwrap_or(&self.char_category[0])
+    }    
 }
 
 impl DictReadWrite for CharCategoryDef {
