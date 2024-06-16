@@ -12,7 +12,7 @@ pub struct MatrixDef {
     pub data: Vec<i16>,
 }
 
-pub fn parse_matrix_def_file(path: &Path) -> Result<MatrixDef, anyhow::Error> {
+pub fn parse_matrix_def(path: &Path) -> Result<MatrixDef, anyhow::Error> {
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
     parse(&mut reader)
@@ -60,7 +60,7 @@ mod tests {
         // Create a temporary file
         let path = std::env::temp_dir().join("matrix.def");
         std::fs::write(&path, "2 2\n0 0 1\n0 1 2\n1 0 3\n1 1 4\n").unwrap();
-        let matrix_def = parse_matrix_def_file(&path);
+        let matrix_def = parse_matrix_def(&path);
         assert_eq!(
             matrix_def.unwrap(),
             MatrixDef {

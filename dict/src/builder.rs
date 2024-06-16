@@ -56,7 +56,7 @@ pub fn build(config: &Config) -> dict::Dict {
     let morph_feature_table = morph_feature_table_builder.build();
 
     let matrix =
-        matrix_def::parse_matrix_def_file(&config.root_path.join(config.matrix_def_file_name))
+        matrix_def::parse_matrix_def(&config.root_path.join(config.matrix_def_file_name))
             .expect("Failed to parse matrix.def");
     let connection_table = ConnectionTable::from(matrix);
 
@@ -64,7 +64,7 @@ pub fn build(config: &Config) -> dict::Dict {
     let index = index::IndexTable::build(&sorted_keywords).expect("Failed to build index");
 
     // char.def
-    let char_class_def = char_def::parse_char_class_def_file(
+    let char_class_def = char_def::parse_char_def(
         &config.root_path.join(config.char_def_file_name),
         config.encoding,
     )
@@ -72,11 +72,12 @@ pub fn build(config: &Config) -> dict::Dict {
     let char_category_def = CharCategoryDef::new(char_class_def);
 
     // unk.def
-    let _unk_def = parse_csv(
+    let unk_def = parse_csv(
         &config.root_path.join(config.unk_def_file_name),
         config.encoding,
     )
     .expect("Failed to parse unk.def");
+    dbg!(&unk_def);
 
     dict::Dict::new(
         morphs,

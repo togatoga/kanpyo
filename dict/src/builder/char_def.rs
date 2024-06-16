@@ -15,7 +15,7 @@ pub struct CharClassDef {
     pub group_map: Vec<bool>,
 }
 
-pub fn parse_char_class_def_file(
+pub fn parse_char_def(
     path: &Path,
     encoding: &'static Encoding,
 ) -> Result<CharClassDef, anyhow::Error> {
