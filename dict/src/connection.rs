@@ -33,9 +33,9 @@ impl DictReadWrite for ConnectionTable {
         let col = usize::from_le_bytes(buf);
         let mut data = vec![0; row * col];
         let mut buf: [u8; 2] = [0; 2];
-        for i in 0..row * col {
+        for data in data.iter_mut() {
             r.read_exact(&mut buf)?;
-            data[i] = i16::from_le_bytes(buf);
+            *data = i16::from_le_bytes(buf);
         }
 
         Ok(ConnectionTable { row, col, data })

@@ -12,7 +12,7 @@ pub struct UnkDict {
 impl UnkDict {
     pub fn build(
         mut records: Vec<unk::UnkDefRecord>,
-        char_class: &Vec<String>,
+        char_class: &[String],
     ) -> Result<Self, anyhow::Error> {
         records.sort();
         let mut morphs = morph::Morphs::new();
