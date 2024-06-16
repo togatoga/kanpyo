@@ -3,7 +3,7 @@ use unk::parse_unk_def;
 
 use crate::{
     char_category_def::CharCategoryDef, connection::ConnectionTable, dict, index, morph::Morphs,
-    morph_feature,
+    morph_feature, unk_dict,
 };
 
 use self::{config::Config, record::parse_csv};
@@ -55,30 +55,33 @@ pub fn build(config: &Config) -> dict::Dict {
         morph_feature_table_builder.push(morph_features);
     }
     let morph_feature_table = morph_feature_table_builder.build();
-
-    let matrix =
+    let connection_table = ConnectionTable::from(
         matrix_def::parse_matrix_def(&config.root_path.join(config.matrix_def_file_name))
-            .expect("Failed to parse matrix.def");
-    let connection_table = ConnectionTable::from(matrix);
+            .expect("Failed to parse matrix.def"),
+    );
 
     // index
     let index = index::IndexTable::build(&sorted_keywords).expect("Failed to build index");
 
     // char.def
-    let char_class_def = char_def::parse_char_def(
-        &config.root_path.join(config.char_def_file_name),
-        config.encoding,
-    )
-    .expect("Failed to parse char.def");
-    let char_category_def = CharCategoryDef::new(char_class_def);
+    let char_category_def = CharCategoryDef::new(
+        char_def::parse_char_def(
+            &config.root_path.join(config.char_def_file_name),
+            config.encoding,
+        )
+        .expect("Failed to parse char.def"),
+    );
 
     // unk.def
-    let unk_def_records = parse_unk_def(
-        &config.root_path.join(config.unk_def_file_name),
-        config.encoding,
+    let unk_dict = unk_dict::UnkDict::build(
+        parse_unk_def(
+            &config.root_path.join(config.unk_def_file_name),
+            config.encoding,
+        )
+        .expect("Failed to parse unk.def"),
+        &char_category_def.char_class,
     )
-    .expect("Failed to parse unk.def");
-    dbg!(&unk_def_records);
+    .expect("Failed to build unk dict");
 
     dict::Dict::new(
         morphs,
@@ -86,5 +89,6 @@ pub fn build(config: &Config) -> dict::Dict {
         connection_table,
         index,
         char_category_def,
+        unk_dict,
     )
 }

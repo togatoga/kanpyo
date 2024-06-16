@@ -7,6 +7,7 @@ use crate::connection;
 use crate::index;
 use crate::morph;
 use crate::morph_feature;
+use crate::unk_dict;
 
 pub trait DictReadWrite {
     fn from_dict<R: std::io::Read>(r: &mut R) -> std::io::Result<Self>
@@ -24,6 +25,7 @@ pub struct Dict {
     pub connection_table: connection::ConnectionTable,
     pub index_table: index::IndexTable,
     pub char_category_def: char_category_def::CharCategoryDef,
+    pub unk_dict: unk_dict::UnkDict,
 }
 
 impl Dict {
@@ -33,6 +35,7 @@ impl Dict {
         connection_table: connection::ConnectionTable,
         index: index::IndexTable,
         char_category_def: char_category_def::CharCategoryDef,
+        unk_dict: unk_dict::UnkDict,
     ) -> Self {
         Dict {
             morphs,
@@ -40,6 +43,7 @@ impl Dict {
             connection_table,
             index_table: index,
             char_category_def,
+            unk_dict,
         }
     }
 
@@ -58,6 +62,8 @@ impl Dict {
         self.index_table.write_dict(&mut zip)?;
         zip.start_file("chardef.dict", options)?;
         self.char_category_def.write_dict(&mut zip)?;
+        zip.start_file("unk.dict", options)?;
+        self.unk_dict.write_dict(&mut zip)?;
         Ok(())
     }
     pub fn load<R: Read + Seek>(r: &mut R) -> Result<Self, anyhow::Error> {
@@ -92,12 +98,19 @@ impl Dict {
             char_category_def::CharCategoryDef::from_dict(&mut r)?
         };
 
+        let unk_dict = {
+            let unk_dict = zip.by_name("unk.dict")?;
+            let mut r = std::io::BufReader::new(unk_dict);
+            unk_dict::UnkDict::from_dict(&mut r)?
+        };
+
         Ok(Dict::new(
             morphs,
             morph_feature_table,
             connection_table,
             index,
             char_category_def,
+            unk_dict,
         ))
     }
 }
@@ -139,6 +152,18 @@ mod tests {
                 char_category: vec![b'a', b'b', b'c'],
                 invoke_list: vec![true, false, true],
                 group_list: vec![false, true, false],
+            },
+            unk_dict: unk_dict::UnkDict {
+                morphs: morph::Morphs::from(vec![
+                    morph::Morph::new(1, 2, 3),
+                    morph::Morph::new(11, 22, 33),
+                ]),
+                morph_feature_table: morph_feature::MorphFeatureTableBuilder::from(vec![
+                    vec!["hello", "goodbye"],
+                    vec!["こんにちは", "さようなら"],
+                ])
+                .build(),
+                char_category_to_morph_id: vec![(1, (1, 1)), (2, (2, 2))].into_iter().collect(),
             },
         }
     }

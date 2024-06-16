@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use encoding_rs::Encoding;
 
 /// UnkDefRecord represents a record in the unk.def file.
-#[derive(Debug, PartialEq, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct UnkDefRecord {
     pub category: String,
     pub left_id: usize,
@@ -12,7 +12,10 @@ pub struct UnkDefRecord {
     pub features: Vec<String>,
 }
 
-pub fn parse_unk_def(path: &Path, encoding: &'static Encoding) -> Result<Vec<UnkDefRecord>, anyhow::Error> {
+pub fn parse_unk_def(
+    path: &Path,
+    encoding: &'static Encoding,
+) -> Result<Vec<UnkDefRecord>, anyhow::Error> {
     let byte = fs::read(path)?;
     let (utf8, _, had_errors) = encoding.decode(&byte);
     if had_errors {
@@ -23,8 +26,6 @@ pub fn parse_unk_def(path: &Path, encoding: &'static Encoding) -> Result<Vec<Unk
         .from_reader(utf8.as_bytes());
     parse(&mut reader)
 }
-
-
 
 fn parse(reader: &mut csv::Reader<&[u8]>) -> Result<Vec<UnkDefRecord>, anyhow::Error> {
     let mut records = Vec::new();

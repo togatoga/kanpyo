@@ -24,8 +24,6 @@ impl<'a> Lattice<'a> {
         let mut la = Lattice::new(dict, input);
         la.add_bos_node();
         const MAXIMUM_UNKNOWN_WORD_LENGTH: usize = 1024;
-
-        let unknown_id = -1;
         for (char_pos, ch) in input.chars().enumerate() {
             let mut any_match = false;
             // Known words
@@ -61,9 +59,20 @@ impl<'a> Lattice<'a> {
                         }
                     }
                 }
-                let surface = input
-                    .get(byte_pos..end_byte_pos);                    
-                la.add_node(unknown_id, byte_pos, char_pos, NodeClass::Unknown, surface);
+                let surface = input.get(byte_pos..end_byte_pos);
+                if let Some(&(morph_id, count)) =
+                    dict.unk_dict.char_category_to_morph_id.get(&char_category)
+                {
+                    for i in 0..count {
+                        la.add_node(
+                            morph_id + i as isize,
+                            byte_pos,
+                            char_pos,
+                            NodeClass::Unknown,
+                            surface,
+                        );
+                    }
+                }
             }
 
             byte_pos += ch.len_utf8();
@@ -141,6 +150,7 @@ impl<'a> Lattice<'a> {
     ) {
         let morph = match class {
             NodeClass::Known => Some(self.dict.morphs[id - 1].clone()),
+            NodeClass::Unknown => Some(self.dict.unk_dict.morphs[id - 1].clone()),
             _ => None,
         };
         let node = node::Node {

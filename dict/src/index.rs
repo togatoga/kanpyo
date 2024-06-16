@@ -43,7 +43,7 @@ impl IndexTable {
         let ids_and_lengths = self.da.search_common_prefix_of(input)?;
         let mut results = vec![];
         for (id, len) in ids_and_lengths.iter() {
-            let dup = *self.dup.get(&id).unwrap_or(&0);
+            let dup = *self.dup.get(id).unwrap_or(&0);
             for i in 0..=dup {
                 results.push((*id + i as isize, *len));
             }
