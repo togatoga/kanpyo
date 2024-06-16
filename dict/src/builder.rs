@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use unk::parse_unk_def;
 
 use crate::{
     char_category_def::CharCategoryDef, connection::ConnectionTable, dict, index, morph::Morphs,
@@ -72,12 +73,12 @@ pub fn build(config: &Config) -> dict::Dict {
     let char_category_def = CharCategoryDef::new(char_class_def);
 
     // unk.def
-    let unk_def = parse_csv(
+    let unk_def_records = parse_unk_def(
         &config.root_path.join(config.unk_def_file_name),
         config.encoding,
     )
     .expect("Failed to parse unk.def");
-    dbg!(&unk_def);
+    dbg!(&unk_def_records);
 
     dict::Dict::new(
         morphs,
