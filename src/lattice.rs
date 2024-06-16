@@ -30,7 +30,7 @@ impl<'a> Lattice<'a> {
             let mut any_match = false;
             // Known words
             let text = input.get(byte_pos..).expect("byte_pos is out of range");
-            if let Some(ids_and_byte_lenghts) = dict.index.search_common_prefix_of(text) {
+            if let Some(ids_and_byte_lenghts) = dict.index_table.search_common_prefix_of(text) {
                 any_match = true;
                 for (id, byte_length) in ids_and_byte_lenghts {
                     let surface = input

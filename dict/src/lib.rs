@@ -6,3 +6,4 @@ pub mod index;
 pub mod morph;
 pub mod morph_feature;
 pub mod trie;
+pub mod unk_dict;

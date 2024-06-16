@@ -18,11 +18,11 @@ pub trait DictReadWrite {
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub struct Dict {
     pub morphs: morph::Morphs,
-    pub pos_table: morph_feature::MorphFeatureTable,
+    pub morph_feature_table: morph_feature::MorphFeatureTable,
     // contents_meta
     // contents
     pub connection_table: connection::ConnectionTable,
-    pub index: index::IndexTable,
+    pub index_table: index::IndexTable,
     pub char_category_def: char_category_def::CharCategoryDef,
 }
 
@@ -36,9 +36,9 @@ impl Dict {
     ) -> Self {
         Dict {
             morphs,
-            pos_table: morph_feature_table,
+            morph_feature_table,
             connection_table,
-            index,
+            index_table: index,
             char_category_def,
         }
     }
@@ -51,11 +51,11 @@ impl Dict {
         zip.start_file("morph.dict", options)?;
         self.morphs.write_dict(&mut zip)?;
         zip.start_file("morph_feature.dict", options)?;
-        self.pos_table.write_dict(&mut zip)?;
+        self.morph_feature_table.write_dict(&mut zip)?;
         zip.start_file("connection.dict", options)?;
         self.connection_table.write_dict(&mut zip)?;
         zip.start_file("index.dict", options)?;
-        self.index.write_dict(&mut zip)?;
+        self.index_table.write_dict(&mut zip)?;
         zip.start_file("chardef.dict", options)?;
         self.char_category_def.write_dict(&mut zip)?;
         Ok(())
@@ -119,7 +119,7 @@ mod tests {
                 morph::Morph::new(111, 222, 333),
                 morph::Morph::new(444, 555, 666),
             ]),
-            pos_table: morph_feature::MorphFeatureTableBuilder::from(vec![
+            morph_feature_table: morph_feature::MorphFeatureTableBuilder::from(vec![
                 vec!["str1", "str2", "str3", "str3", "str4", "str5"],
                 vec!["str1", "str2", "str3", "str6", "str7", "str8"],
             ])
@@ -129,7 +129,7 @@ mod tests {
                 col: 3,
                 data: vec![0, 1, 2, 3, 4, 5],
             }),
-            index,
+            index_table: index,
             char_category_def: char_category_def::CharCategoryDef {
                 char_class: vec![
                     "class1".to_string(),

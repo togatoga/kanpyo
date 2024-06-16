@@ -40,8 +40,8 @@ fn print_tokens(tokens: Vec<kanpyo::token::Token>, dict: &dict::Dict) {
             let mut features = vec![];
             match token.class {
                 kanpyo::token::TokenClass::Known => {
-                    for idx in dict.pos_table.morph_features[token.id as usize - 1].iter() {
-                        features.push(dict.pos_table.name_list[*idx as usize].clone());
+                    for idx in dict.morph_feature_table.morph_features[token.id as usize - 1].iter() {
+                        features.push(dict.morph_feature_table.name_list[*idx as usize].clone());
                     }
                 }
                 kanpyo::token::TokenClass::Unknown => {
