@@ -127,16 +127,14 @@ impl<'a> Lattice<'a> {
     pub fn graphviz(&self, unk: bool) {
         let bests = self.viterbi().into_iter().collect::<BTreeSet<Node>>();
         println!("graph lattice {{");
-        println!("dpi=48;");
+        println!("dpi=300;");
         println!("graph [style=filled, splines=true, overlap=false, fontsize=30, rankdir=LR]");
         println!("edge [fontname=Helvetica, fontcolor=red, color=\"#606060\"]");
         println!("node [shape=box, style=filled, fillcolor=\"#e8e8f0\", fontname=Helvetica]");
         let mut node_to_id = BTreeMap::default();
         for (id, node) in self.nodes.iter().enumerate() {
-            if !unk {
-                if node.class == NodeClass::Unknown && !bests.contains(node) {
-                    continue;
-                }
+            if !unk && node.class == NodeClass::Unknown && !bests.contains(node) {
+                continue;
             }
             node_to_id.insert(node, id);
             let label = match node.class {
@@ -153,7 +151,7 @@ impl<'a> Lattice<'a> {
                     self.dict.morph_feature_table.morph_features[node.id as usize - 1]
                         .iter()
                         .map(|&idx| self.dict.morph_feature_table.name_list[idx as usize].clone())
-                        .take(3)
+                        .filter(|s| s != "*")
                         .collect::<Vec<String>>()
                         .join("/"),
                     node.morph.as_ref().unwrap().cost
@@ -162,10 +160,8 @@ impl<'a> Lattice<'a> {
             if id == 0 || id == self.nodes.len() - 1 || bests.contains(node) {
                 println!("{} [label=\"{}\", shape=ellipse, peripheries=2]", id, label);
             } else {
-                if !unk {
-                    if node.class == NodeClass::Unknown {
-                        continue;
-                    }
+                if !unk && node.class == NodeClass::Unknown {
+                    continue;
                 }
                 println!("{} [label=\"{}\"]", id, label);
             }
