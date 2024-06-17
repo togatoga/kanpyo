@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use dict::dict;
 use kanpyo::{lattice::node::BOS_EOS_ID, tokenizer::Tokenzier};
-use std::{path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "kanpyo", about = "Japanese Morphological Analyzer", version = "0.1", long_about=None)]
@@ -31,18 +31,19 @@ impl KanpyoCommand {
             std::io::BufReader::new(std::fs::File::open(dict).expect("failed to open dict"));
         let tokenzier = Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"));
         loop {
-            let tokens = match &input {
-                Some(text) => tokenzier.tokenize(text),
+            match &input {
+                Some(text) => {
+                    print_tokens(tokenzier.tokenize(text), &tokenzier.dict);
+                    break;
+                }
                 None => {
                     let mut buf = String::new();
                     std::io::stdin()
                         .read_line(&mut buf)
                         .expect("failed to read from stdin");
-                    // trim last newline
-                    tokenzier.tokenize(buf.trim_end())
+                    print_tokens(tokenzier.tokenize(buf.trim_end()), &tokenzier.dict);
                 }
             };
-            print_tokens(tokens, &tokenzier.dict);
         }
     }
     fn run(&self) {
