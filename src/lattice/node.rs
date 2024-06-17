@@ -3,7 +3,7 @@ use dict::{morph::Morph, trie::da::KeywordID};
 pub const BOS_EOS_ID: KeywordID = 0;
 
 // NodeClass codes.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NodeClass {
     Dummy,
     Known,
@@ -11,7 +11,7 @@ pub enum NodeClass {
 }
 
 // Node is a lattice node.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Node {
     pub id: KeywordID,
     pub byte_pos: usize,

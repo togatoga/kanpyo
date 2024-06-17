@@ -22,7 +22,15 @@ enum SubCommand {
         #[arg(short, long, default_value = "dict/ipa.dict")]
         dict: PathBuf,
     },
-    Visualize,
+    /// Output lattice in Graphviz format
+    Graphviz {
+        /// Input text to analyze
+        #[arg(index = 1)]
+        input: String,
+        /// Dictionary file
+        #[arg(short, long, default_value = "dict/ipa.dict")]
+        dict: PathBuf,
+    },
 }
 
 impl KanpyoCommand {
@@ -46,17 +54,23 @@ impl KanpyoCommand {
             };
         }
     }
-    fn run(&self) {
-        match &self.subcommand {
+    fn graphviz(input: String, dict: PathBuf) {
+        let mut reader =
+            std::io::BufReader::new(std::fs::File::open(dict).expect("failed to open dict"));
+        let tokenzier = Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"));
+        let lattice = kanpyo::lattice::Lattice::build(&tokenzier.dict, &input);
+        lattice.graphviz();
+    }
+    fn run(self) {
+        match self.subcommand {
             Some(SubCommand::Tokenize { input, dict }) => {
-                KanpyoCommand::tokenize(input.clone(), dict.clone());
+                KanpyoCommand::tokenize(input, dict);
             }
-            Some(SubCommand::Visualize) => {
-                println!("Visualize");
+            Some(SubCommand::Graphviz { input, dict }) => {
+                KanpyoCommand::graphviz(input, dict);
             }
             None => {
-                let dict = PathBuf::from("dict/ipa.dict");
-                KanpyoCommand::tokenize(None, dict);
+                KanpyoCommand::tokenize(None, PathBuf::from("dict/ipa.dict"));
             }
         }
     }
