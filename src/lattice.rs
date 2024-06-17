@@ -124,8 +124,7 @@ impl<'a> Lattice<'a> {
         paths
     }
 
-    pub fn graphviz(&self) {
-        // TODO(togatoga): Include Unknown nodes in the graph.
+    pub fn graphviz(&self, unk: bool) {
         let bests = self.viterbi().into_iter().collect::<BTreeSet<Node>>();
         println!("graph lattice {{");
         println!("dpi=48;");
@@ -134,8 +133,10 @@ impl<'a> Lattice<'a> {
         println!("node [shape=box, style=filled, fillcolor=\"#e8e8f0\", fontname=Helvetica]");
         let mut node_to_id = BTreeMap::default();
         for (id, node) in self.nodes.iter().enumerate() {
-            if node.class == NodeClass::Unknown && !bests.contains(node) {
-                continue;
+            if !unk {
+                if node.class == NodeClass::Unknown && !bests.contains(node) {
+                    continue;
+                }
             }
             node_to_id.insert(node, id);
             let label = match node.class {
@@ -160,7 +161,12 @@ impl<'a> Lattice<'a> {
             };
             if id == 0 || id == self.nodes.len() - 1 || bests.contains(node) {
                 println!("{} [label=\"{}\", shape=ellipse, peripheries=2]", id, label);
-            } else if node.class != NodeClass::Unknown {
+            } else {
+                if !unk {
+                    if node.class == NodeClass::Unknown {
+                        continue;
+                    }
+                }
                 println!("{} [label=\"{}\"]", id, label);
             }
         }
