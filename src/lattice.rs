@@ -124,10 +124,10 @@ impl<'a> Lattice<'a> {
         paths
     }
 
-    pub fn graphviz(&self, unk: bool) {
+    pub fn graphviz(&self, dpi: usize, unk: bool) {
         let bests = self.viterbi().into_iter().collect::<BTreeSet<Node>>();
         println!("graph lattice {{");
-        println!("dpi=300;");
+        println!("dpi={dpi};");
         println!("graph [style=filled, splines=true, overlap=false, fontsize=30, rankdir=LR]");
         println!("edge [fontname=Helvetica, fontcolor=red, color=\"#606060\"]");
         println!("node [shape=box, style=filled, fillcolor=\"#e8e8f0\", fontname=Helvetica]");

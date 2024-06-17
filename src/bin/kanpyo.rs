@@ -30,6 +30,8 @@ enum SubCommand {
         /// Dictionary file
         #[arg(short, long, default_value = "dict/ipa.dict")]
         dict: PathBuf,
+        #[arg(short, long, default_value = "48")]
+        dpi: usize,
         /// Output unknown morphemes
         #[arg(short, long)]
         unk: bool,
@@ -57,20 +59,25 @@ impl KanpyoCommand {
             };
         }
     }
-    fn graphviz(input: String, dict: PathBuf, unk: bool) {
+    fn graphviz(input: String, dict: PathBuf, dpi: usize, unk: bool) {
         let mut reader =
             std::io::BufReader::new(std::fs::File::open(dict).expect("failed to open dict"));
         let tokenzier = Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"));
         let lattice = kanpyo::lattice::Lattice::build(&tokenzier.dict, &input);
-        lattice.graphviz(unk);
+        lattice.graphviz(dpi, unk);
     }
     fn run(self) {
         match self.subcommand {
             Some(SubCommand::Tokenize { input, dict }) => {
                 KanpyoCommand::tokenize(input, dict);
             }
-            Some(SubCommand::Graphviz { input, dict, unk }) => {
-                KanpyoCommand::graphviz(input, dict, unk);
+            Some(SubCommand::Graphviz {
+                input,
+                dict,
+                dpi,
+                unk,
+            }) => {
+                KanpyoCommand::graphviz(input, dict, dpi, unk);
             }
             None => {
                 KanpyoCommand::tokenize(None, PathBuf::from("dict/ipa.dict"));
