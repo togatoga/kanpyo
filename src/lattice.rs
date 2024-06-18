@@ -145,7 +145,7 @@ impl<'a> Lattice<'a> {
                         "EOS".to_string()
                     }
                 }
-                NodeClass::Known | NodeClass::Unknown => format!(
+                NodeClass::Known => format!(
                     "{}\n{}\n{}",
                     node.surface.as_ref().unwrap(),
                     self.dict.morph_feature_table.morph_features[node.id as usize - 1]
@@ -156,7 +156,22 @@ impl<'a> Lattice<'a> {
                         .join("/"),
                     node.morph.as_ref().unwrap().cost
                 ),
+                NodeClass::Unknown => format!(
+                    "{}\n{}\n{}",
+                    node.surface.as_ref().unwrap(),
+                    self.dict.unk_dict.morph_feature_table.morph_features[node.id as usize - 1]
+                        .iter()
+                        .map(
+                            |&idx| self.dict.unk_dict.morph_feature_table.name_list[idx as usize]
+                                .clone()
+                        )
+                        .filter(|s| s != "*")
+                        .collect::<Vec<String>>()
+                        .join("/"),
+                    node.morph.as_ref().unwrap().cost
+                ),
             };
+
             if id == 0 || id == self.nodes.len() - 1 || bests.contains(node) {
                 println!("{} [label=\"{}\", shape=ellipse, peripheries=2]", id, label);
             } else {
