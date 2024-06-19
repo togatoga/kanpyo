@@ -20,3 +20,18 @@ pub struct Node {
     pub morph: Option<Morph>,
     pub surface: Option<String>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum NodeEnum {
+    BOS {
+        byte_pos: usize,
+        char_pos: usize,
+        morph: Morph,
+    },
+    EOS {
+        byte_pos: usize,
+        char_pos: usize,
+        morph: Morph,
+    },
+    Node(Node),
+}
