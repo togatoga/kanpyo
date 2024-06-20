@@ -19,7 +19,7 @@ impl UnkDict {
         let mut feature_table_builder = morph_feature::MorphFeatureTableBuilder::default();
         let mut char_category_to_morph_id = BTreeMap::new();
         for (morph_id, record) in records.iter().enumerate() {
-            if record.cost > std::i16::MAX as i64 {
+            if record.cost > i16::MAX as i64 {
                 return Err(anyhow::anyhow!("Cost is too large: {}", record.cost));
             }
             morphs.push(

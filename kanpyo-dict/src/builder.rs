@@ -34,7 +34,7 @@ pub fn build(config: &Config) -> dict::Dict {
     let mut sorted_keywords = vec![];
     let mut morph_feature_table_builder = morph_feature::MorphFeatureTableBuilder::default();
     for record in &sorted_records {
-        if record.cost > std::i16::MAX as i64 {
+        if record.cost > i16::MAX as i64 {
             panic!("Cost is too large: {}", record.cost);
         }
         sorted_keywords.push(record.surface.clone());
