@@ -7,10 +7,10 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
-dict = { path = "dict" }
+kanpyo-dict = { path = "kanpyo-dict" }
 
 
 [workspace]
 members = [
-    "dict"
+    "kanpyo-dict"
 ]

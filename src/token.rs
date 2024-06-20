@@ -1,4 +1,4 @@
-use dict::trie::da::KeywordID;
+use kanpyo_dict::trie::da::KeywordID;
 
 pub enum TokenClass {
     Dummy,

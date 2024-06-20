@@ -1,4 +1,4 @@
-use dict::dict::Dict;
+use kanpyo_dict::dict::Dict;
 
 use crate::{
     lattice::{self, node::NodeClass},

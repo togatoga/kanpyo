@@ -1,4 +1,4 @@
-use dict::{morph::Morph, trie::da::KeywordID};
+use kanpyo_dict::{morph::Morph, trie::da::KeywordID};
 
 pub const BOS_EOS_ID: KeywordID = 0;
 

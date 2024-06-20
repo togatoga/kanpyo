@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
-use dict::dict;
 use kanpyo::{lattice::node::BOS_EOS_ID, tokenizer::Tokenzier};
+use kanpyo_dict::dict;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -19,7 +19,7 @@ enum SubCommand {
         #[arg(index = 1)]
         input: Option<String>,
         /// Dictionary file
-        #[arg(short, long, default_value = "dict/ipa.dict")]
+        #[arg(short, long, default_value = "kanpyo-dict/ipa.dict")]
         dict: PathBuf,
     },
     /// Output lattice in Graphviz format
@@ -28,7 +28,7 @@ enum SubCommand {
         #[arg(index = 1)]
         input: String,
         /// Dictionary file
-        #[arg(short, long, default_value = "dict/ipa.dict")]
+        #[arg(short, long, default_value = "kanpyo-dict/ipa.dict")]
         dict: PathBuf,
         #[arg(short, long, default_value = "48")]
         dpi: usize,

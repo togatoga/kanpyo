@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dict::{dict::Dict, morph, trie::da::KeywordID};
+use kanpyo_dict::{dict::Dict, morph, trie::da::KeywordID};
 use node::{Node, NodeClass};
 pub mod node;
 // Lattice represents a grid of morph nodes.
