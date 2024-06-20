@@ -14,3 +14,7 @@ kanpyo-dict = { path = "kanpyo-dict" }
 members = [
     "kanpyo-dict"
 ]
+
+[[bin]]
+name = "kanpyo"
+path = "src/bin/kanpyo.rs"
