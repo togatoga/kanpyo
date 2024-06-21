@@ -177,13 +177,18 @@ impl<'a> Lattice<'a> {
                 if !unk && is_unk {
                     continue;
                 }
-                println!("{} [label=\"{}\"]", id, label);
+                let shape = match node {
+                    Node::Known(_) => "box",
+                    Node::Unknown(_) => "diamond",
+                    Node::Dummy { .. } => "ellipse",
+                };
+                println!("{} [label=\"{}\", shape={}]", id, label, shape);
+                // println!("{} [label=\"{}\"]", id, label);
             }
         }
 
         for edge in self.edges.iter() {
-            for &to in edge {
-                let node = &self.nodes[to];
+            for node in edge.iter().map(|i| &self.nodes[*i]) {
                 let to_id = node_to_id.get(node);
                 if to_id.is_none() {
                     continue;
@@ -220,7 +225,6 @@ impl<'a> Lattice<'a> {
                 }
             }
         }
-
         println!("}}");
     }
 
