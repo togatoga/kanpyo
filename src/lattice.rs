@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use kanpyo_dict::{dict::Dict, morph, trie::da::KeywordID};
-use node::{Node, NodeClass};
+use kanpyo_dict::{dict::Dict, morph::Morph, trie::da::KeywordID};
+use node::Node;
 pub mod node;
 // Lattice represents a grid of morph nodes.
 #[derive(Debug, Clone)]
@@ -36,7 +36,8 @@ impl<'a> Lattice<'a> {
                     let surface = input
                         .get(byte_pos..byte_pos + byte_length)
                         .expect("byte_pos is out of range");
-                    la.add_node(id, byte_pos, char_pos, NodeClass::Known, Some(surface));
+                    la.add_known_node(id, byte_pos, char_pos, surface);
+                    // la.add_node(id, byte_pos, char_pos, NodeClass::Known, Some(surface));
                 }
             }
             let char_category = dict.char_category_def.char_category(ch);
@@ -61,18 +62,15 @@ impl<'a> Lattice<'a> {
                         }
                     }
                 }
-                let surface = input.get(byte_pos..end_byte_pos);
+
                 if let Some(&(morph_id, count)) =
                     dict.unk_dict.char_category_to_morph_id.get(&char_category)
                 {
+                    let surface = input
+                        .get(byte_pos..end_byte_pos)
+                        .expect("byte_pos is out of range");
                     for i in 0..count {
-                        la.add_node(
-                            morph_id + i as isize,
-                            byte_pos,
-                            char_pos,
-                            NodeClass::Unknown,
-                            surface,
-                        );
+                        la.add_unknown_node(morph_id + i as isize, byte_pos, char_pos, surface);
                     }
                 }
             }
@@ -90,20 +88,17 @@ impl<'a> Lattice<'a> {
         for char_pos in 1..char_len {
             for (i, target) in self.edges[char_pos].iter().map(|&i| (i, &self.nodes[i])) {
                 dp[i] = Some(INF);
-                for (j, previous) in self.edges[target.char_pos]
-                    .iter()
-                    .map(|&i| (i, &self.nodes[i]))
-                {
-                    let cost = target.morph.as_ref().map_or(0, |m| m.cost) as i32;
+                let char_pos = target.char_pos();
+                for (j, previous) in self.edges[char_pos].iter().map(|&i| (i, &self.nodes[i])) {
+                    // let cost = target.morph.as_ref().map_or(0, |m| m.cost) as i32;
                     let prev_cost = dp[j].unwrap_or(0);
-                    let matrix_cost = match (previous.morph.as_ref(), target.morph.as_ref()) {
-                        (Some(prev_morph), Some(target_morph)) => self
-                            .dict
-                            .connection_table
-                            .get(prev_morph.right_id as usize, target_morph.left_id as usize)
-                            as i32,
-                        _ => 0,
-                    };
+                    let previous_morph = previous.morph();
+                    let target_morph = target.morph();
+                    let cost = target_morph.cost as i32;
+                    let matrix_cost = self.dict.connection_table.get(
+                        previous_morph.right_id as usize,
+                        target_morph.left_id as usize,
+                    ) as i32;
                     let total_cost = (prev_cost + cost + matrix_cost).min(INF);
                     dp[i].map_or(true, |c| total_cost < c).then(|| {
                         dp[i] = Some(total_cost);
@@ -133,32 +128,27 @@ impl<'a> Lattice<'a> {
         println!("node [shape=box, style=filled, fillcolor=\"#e8e8f0\", fontname=Helvetica]");
         let mut node_to_id = BTreeMap::default();
         for (id, node) in self.nodes.iter().enumerate() {
-            if !unk && node.class == NodeClass::Unknown && !bests.contains(node) {
+            let is_unk = matches!(node, Node::Unknown(_));
+            if !unk && is_unk && !bests.contains(node) {
                 continue;
             }
             node_to_id.insert(node, id);
-            let label = match node.class {
-                NodeClass::Dummy => {
-                    if id == 0 {
-                        "BOS".to_string()
-                    } else {
-                        "EOS".to_string()
-                    }
-                }
-                NodeClass::Known => format!(
+
+            let label = match node {
+                Node::Known(node) => format!(
                     "{}\n{}\n{}",
-                    node.surface.as_ref().unwrap(),
+                    node.surface,
                     self.dict.morph_feature_table.morph_features[node.id as usize - 1]
                         .iter()
                         .map(|&idx| self.dict.morph_feature_table.name_list[idx as usize].clone())
                         .filter(|s| s != "*")
                         .collect::<Vec<String>>()
                         .join("/"),
-                    node.morph.as_ref().unwrap().cost
+                    node.morph.cost
                 ),
-                NodeClass::Unknown => format!(
+                Node::Unknown(node) => format!(
                     "{}\n{}\n{}",
-                    node.surface.as_ref().unwrap(),
+                    node.surface,
                     self.dict.unk_dict.morph_feature_table.morph_features[node.id as usize - 1]
                         .iter()
                         .map(
@@ -168,14 +158,23 @@ impl<'a> Lattice<'a> {
                         .filter(|s| s != "*")
                         .collect::<Vec<String>>()
                         .join("/"),
-                    node.morph.as_ref().unwrap().cost
+                    node.morph.cost
                 ),
+                _ => {
+                    if id == 0 {
+                        "BOS".to_string()
+                    } else if id == self.nodes.len() - 1 {
+                        "EOS".to_string()
+                    } else {
+                        "".to_string()
+                    }
+                }
             };
 
             if id == 0 || id == self.nodes.len() - 1 || bests.contains(node) {
                 println!("{} [label=\"{}\", shape=ellipse, peripheries=2]", id, label);
             } else {
-                if !unk && node.class == NodeClass::Unknown {
+                if !unk && is_unk {
                     continue;
                 }
                 println!("{} [label=\"{}\"]", id, label);
@@ -190,7 +189,7 @@ impl<'a> Lattice<'a> {
                     continue;
                 }
                 let to_id = to_id.unwrap();
-                for &from in self.edges[node.char_pos].iter() {
+                for &from in self.edges[node.char_pos()].iter() {
                     let from_node = &self.nodes[from];
                     let from_id = node_to_id.get(from_node);
                     if from_id.is_none() {
@@ -200,15 +199,14 @@ impl<'a> Lattice<'a> {
                     if from_id == to_id {
                         continue;
                     }
-                    let label = match (from_node.morph.as_ref(), node.morph.as_ref()) {
-                        (Some(from_morph), Some(to_morph)) => format!(
-                            "{}",
-                            self.dict
-                                .connection_table
-                                .get(from_morph.right_id as usize, to_morph.left_id as usize)
-                        ),
-                        _ => "".to_string(),
-                    };
+
+                    let label = format!(
+                        "{}",
+                        self.dict.connection_table.get(
+                            from_node.morph().right_id as usize,
+                            node.morph().left_id as usize
+                        )
+                    );
                     let ok1 = bests.contains(from_node) || *from_id == 0;
                     let ok2 = bests.contains(node) || *to_id == self.nodes.len() - 1;
                     if ok1 && ok2 {
@@ -227,46 +225,49 @@ impl<'a> Lattice<'a> {
     }
 
     fn add_bos_node(&mut self) {
-        self.add_node(node::BOS_EOS_ID, 0, 0, NodeClass::Dummy, None);
+        let idx = self.nodes.len();
+        self.nodes.push(node::Node::Dummy {
+            byte_pos: 0,
+            char_pos: 0,
+            morph: Morph::new(0, 0, 0),
+        });
+        self.edges[0].push(idx);
     }
     fn add_eos_node(&mut self, input: &str) {
-        let char_pos = input.chars().count();
-        let node: Node = node::Node {
-            id: node::BOS_EOS_ID,
-            byte_pos: input.len(),
-            char_pos,
-            class: NodeClass::Dummy,
-            morph: Some(morph::Morph::new(0, 0, 0)),
-            surface: None,
-        };
         let idx = self.nodes.len();
-        self.nodes.push(node);
+        let byte_pos = input.len();
+        let char_pos = input.chars().count();
+        self.nodes.push(node::Node::Dummy {
+            byte_pos,
+            char_pos,
+            morph: Morph::new(0, 0, 0),
+        });
         self.edges[char_pos + 1].push(idx);
     }
-    fn add_node(
-        &mut self,
-        id: KeywordID,
-        byte_pos: usize,
-        char_pos: usize,
-        class: NodeClass,
-        surface: Option<&str>,
-    ) {
-        let morph = match class {
-            NodeClass::Known => Some(self.dict.morphs[id - 1].clone()),
-            NodeClass::Unknown => Some(self.dict.unk_dict.morphs[id - 1].clone()),
-            NodeClass::Dummy => Some(morph::Morph::new(0, 0, 0)),
-        };
-        let node = node::Node {
+
+    fn add_known_node(&mut self, id: KeywordID, byte_pos: usize, char_pos: usize, surface: &str) {
+        let node = node::Word {
             id,
             byte_pos,
             char_pos,
-            class,
-            morph,
-            surface: surface.map(|s| s.to_string()),
+            morph: self.dict.morphs[id - 1].clone(),
+            surface: surface.to_string(),
         };
         let idx = self.nodes.len();
-        self.nodes.push(node);
-        let p: usize = char_pos + surface.map_or(0, |s| s.chars().count());
-        self.edges[p].push(idx);
+        self.nodes.push(node::Node::Known(node));
+        self.edges[char_pos + surface.chars().count()].push(idx);
+    }
+
+    fn add_unknown_node(&mut self, id: KeywordID, byte_pos: usize, char_pos: usize, surface: &str) {
+        let node = node::Word {
+            id,
+            byte_pos,
+            char_pos,
+            morph: self.dict.unk_dict.morphs[id - 1].clone(),
+            surface: surface.to_string(),
+        };
+        let idx = self.nodes.len();
+        self.nodes.push(node::Node::Unknown(node));
+        self.edges[char_pos + surface.chars().count()].push(idx);
     }
 }

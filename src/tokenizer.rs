@@ -1,7 +1,7 @@
 use kanpyo_dict::dict::Dict;
 
 use crate::{
-    lattice::{self, node::NodeClass},
+    lattice::{self, node::Node},
     token::{Token, TokenClass},
 };
 
@@ -21,18 +21,23 @@ impl Tokenzier {
         let nodes = la.viterbi();
         let mut tokens = vec![];
         for node in nodes.into_iter() {
-            let token_class = match node.class {
-                NodeClass::Dummy => TokenClass::Dummy,
-                NodeClass::Known => TokenClass::Known,
-                NodeClass::Unknown => TokenClass::Unknown,
+            let token_class = match node {
+                Node::Dummy { .. } => TokenClass::Dummy,
+                Node::Known(_) => TokenClass::Known,
+                Node::Unknown(_) => TokenClass::Unknown,
             };
-            let surface = node.surface.unwrap_or("EOS".to_string());
+
+            let surface = match &node {
+                Node::Dummy { .. } => "EOS".to_string(),
+                Node::Known(node) | Node::Unknown(node) => node.surface.clone(),
+            };
+
             let token = Token {
-                id: node.id,
+                id: node.id(),
                 class: token_class,
-                position: node.byte_pos,
-                start: node.char_pos,
-                end: node.char_pos + surface.chars().count(),
+                position: node.byte_pos(),
+                start: node.char_pos(),
+                end: node.char_pos() + surface.chars().count(),
                 surface,
             };
             tokens.push(token);
