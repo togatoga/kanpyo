@@ -64,7 +64,7 @@ impl KanpyoCommand {
             std::io::BufReader::new(std::fs::File::open(dict).expect("failed to open dict"));
         let tokenzier = Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"));
         let lattice = kanpyo::lattice::Lattice::build(&tokenzier.dict, &input);
-        lattice.graphviz(dpi, unk);
+        kanpyo::graphviz::Graphviz { lattice }.graphviz(dpi, unk);
     }
     fn run(self) {
         match self.subcommand {
