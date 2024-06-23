@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use crate::lattice::{node::Node, Lattice};
 
@@ -7,7 +7,27 @@ pub struct Graphviz<'a> {
 }
 
 impl<'a> Graphviz<'a> {
-    pub fn graphviz(&self, dpi: usize, unk: bool) {
+    fn bfs(&self, start: Node, bests: &BTreeSet<Node>) -> Vec<Node> {
+        let mut visited = BTreeSet::new();
+        let mut queue = VecDeque::default();
+        queue.push_back(start);
+        while let Some(node) = queue.pop_front() {
+            if !visited.insert(node.clone()) {
+                continue;
+            }
+            for node in self.lattice.edges[node.char_pos()]
+                .iter()
+                .map(|i| &self.lattice.nodes[*i])
+                .filter(|node| !visited.contains(node))
+                .filter(|node| !matches!(node, Node::Unknown(_)) || bests.contains(node))
+            {
+                queue.push_back(node.clone());
+            }
+        }
+        visited.into_iter().collect()
+    }
+
+    pub fn graphviz(&self, dpi: usize, full_state: bool) {
         let bests = self
             .lattice
             .viterbi()
@@ -18,15 +38,22 @@ impl<'a> Graphviz<'a> {
         println!("graph [style=filled, splines=true, overlap=false, fontsize=30, rankdir=LR]");
         println!("edge [fontname=Helvetica, fontcolor=red, color=\"#606060\"]");
         println!("node [shape=box, style=filled, fillcolor=\"#e8e8f0\", fontname=Helvetica]");
-        let mut node_to_id = BTreeMap::default();
-        for (id, node) in self.lattice.nodes.iter().enumerate() {
-            let is_unk = matches!(node, Node::Unknown(_));
-            if !unk && is_unk && !bests.contains(node) {
-                continue;
-            }
-            node_to_id.insert(node, id);
 
-            let label = match node {
+        let visible_nodes = if !full_state {
+            self.bfs(
+                self.lattice
+                    .nodes
+                    .last()
+                    .expect("last node not found")
+                    .clone(),
+                &bests,
+            )
+        } else {
+            self.lattice.nodes.clone()
+        };
+
+        for (visible_id, visible_node) in visible_nodes.iter().enumerate() {
+            let label = match visible_node {
                 Node::Known(node) => format!(
                     "{}\n{}\n{}",
                     node.surface,
@@ -61,47 +88,54 @@ impl<'a> Graphviz<'a> {
                     node.morph.cost
                 ),
                 _ => {
-                    if id == 0 {
+                    if visible_id == 0 {
                         "BOS".to_string()
-                    } else if id == self.lattice.nodes.len() - 1 {
-                        "EOS".to_string()
                     } else {
-                        "".to_string()
+                        "EOS".to_string()
                     }
                 }
             };
-
-            if id == 0 || id == self.lattice.nodes.len() - 1 || bests.contains(node) {
-                println!("{} [label=\"{}\", shape=ellipse, peripheries=2]", id, label);
+            let color = match visible_node {
+                Node::Known(_) => "black",
+                Node::Unknown(_) => "red",
+                Node::Dummy { .. } => "blue",
+            };
+            if bests.contains(visible_node) || matches!(visible_node, Node::Dummy { .. }) {
+                println!(
+                    "{} [label=\"{}\", shape=ellipse, color={}, peripheries=2]",
+                    visible_id, label, color
+                );
             } else {
-                if !unk && is_unk {
-                    continue;
-                }
-                let shape = match node {
+                let shape = match visible_node {
                     Node::Known(_) => "box",
                     Node::Unknown(_) => "diamond",
                     Node::Dummy { .. } => "ellipse",
                 };
-                println!("{} [label=\"{}\", shape={}]", id, label, shape);
-                // println!("{} [label=\"{}\"]", id, label);
+                println!(
+                    "{} [label=\"{}\", shape={}, color={}]",
+                    visible_id, label, shape, color
+                );
             }
         }
-
+        let node_to_visible_id = visible_nodes
+            .iter()
+            .enumerate()
+            .map(|(id, node)| (node, id))
+            .collect::<BTreeMap<_, _>>();
         for edge in self.lattice.edges.iter() {
-            for node in edge.iter().map(|i| &self.lattice.nodes[*i]) {
-                let to_id = node_to_id.get(node);
-                if to_id.is_none() {
-                    continue;
-                }
-                let to_id = to_id.unwrap();
-                for &from in self.lattice.edges[node.char_pos()].iter() {
-                    let from_node = &self.lattice.nodes[from];
-                    let from_id = node_to_id.get(from_node);
-                    if from_id.is_none() {
-                        continue;
-                    }
-                    let from_id = from_id.unwrap();
-                    if from_id == to_id {
+            for (id, node) in edge.iter().filter_map(|i| {
+                node_to_visible_id
+                    .get(&self.lattice.nodes[*i])
+                    .map(|&id| (id, &self.lattice.nodes[*i]))
+            }) {
+                for (from_id, from_node) in
+                    self.lattice.edges[node.char_pos()].iter().filter_map(|i| {
+                        node_to_visible_id
+                            .get(&self.lattice.nodes[*i])
+                            .map(|&id| (id, &self.lattice.nodes[*i]))
+                    })
+                {
+                    if from_id == id {
                         continue;
                     }
 
@@ -112,15 +146,15 @@ impl<'a> Graphviz<'a> {
                             node.morph().left_id as usize
                         )
                     );
-                    let ok1 = bests.contains(from_node) || *from_id == 0;
-                    let ok2 = bests.contains(node) || *to_id == self.lattice.nodes.len() - 1;
+                    let ok1 = bests.contains(from_node) || matches!(from_node, Node::Dummy { .. });
+                    let ok2 = bests.contains(node) || matches!(node, Node::Dummy { .. });
                     if ok1 && ok2 {
                         println!(
                             "{} -- {} [label=\"{}\", style=bold, color=blue, fontcolor=blue]",
-                            from_id, to_id, label
+                            from_id, id, label
                         );
                     } else {
-                        println!("{} -- {} [label=\"{}\"]", from_id, to_id, label);
+                        println!("{} -- {} [label=\"{}\"]", from_id, id, label);
                     }
                 }
             }

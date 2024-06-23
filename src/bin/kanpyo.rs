@@ -30,11 +30,12 @@ enum SubCommand {
         /// Dictionary file
         #[arg(short, long, default_value = "kanpyo-dict/ipa.dict")]
         dict: PathBuf,
-        #[arg(short, long, default_value = "48")]
+        /// Output full state of lattice
+        #[arg(short, long, default_value = "false")]
+        full_state: bool,
+        /// DPI of output image
+        #[arg(long, default_value = "48")]
         dpi: usize,
-        /// Output unknown morphemes
-        #[arg(short, long)]
-        unk: bool,
     },
 }
 
@@ -59,12 +60,12 @@ impl KanpyoCommand {
             };
         }
     }
-    fn graphviz(input: String, dict: PathBuf, dpi: usize, unk: bool) {
+    fn graphviz(input: String, dict: PathBuf, dpi: usize, full_state: bool) {
         let mut reader =
             std::io::BufReader::new(std::fs::File::open(dict).expect("failed to open dict"));
         let tokenzier = Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"));
         let lattice = kanpyo::lattice::Lattice::build(&tokenzier.dict, &input);
-        kanpyo::graphviz::Graphviz { lattice }.graphviz(dpi, unk);
+        kanpyo::graphviz::Graphviz { lattice }.graphviz(dpi, full_state);
     }
     fn run(self) {
         match self.subcommand {
@@ -75,9 +76,9 @@ impl KanpyoCommand {
                 input,
                 dict,
                 dpi,
-                unk,
+                full_state
             }) => {
-                KanpyoCommand::graphviz(input, dict, dpi, unk);
+                KanpyoCommand::graphviz(input, dict, dpi, full_state);
             }
             None => {
                 KanpyoCommand::tokenize(None, PathBuf::from("dict/ipa.dict"));
