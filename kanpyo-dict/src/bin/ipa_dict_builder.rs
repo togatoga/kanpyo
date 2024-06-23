@@ -12,7 +12,9 @@ enum Encoding {
 }
 
 fn get_default_output_path() -> String {
-    let mut path = dirs::config_dir().expect("failed to get config dir").join("kanpyo");    
+    let mut path = dirs::config_dir()
+        .expect("failed to get config dir")
+        .join("kanpyo");
     path.push("ipa.dict");
     path.into_os_string()
         .into_string()
