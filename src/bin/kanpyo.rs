@@ -29,7 +29,7 @@ enum SubCommand {
     Graphviz {
         /// Input text to analyze
         #[arg(index = 1)]
-        input: String,
+        input: Option<String>,
         /// Dictionary
         #[arg(short, long, value_enum, default_value = "ipa")]
         dict: Dict,
@@ -96,12 +96,23 @@ impl KanpyoCommand {
         }
     }
     fn graphviz(
-        input: String,
+        input: Option<String>,
         dict: Dict,
         custom_dict: Option<PathBuf>,
         dpi: usize,
         full_state: bool,
     ) {
+        let input = match input {
+            Some(text) => text,
+            None => {
+                let mut buf = String::new();
+                std::io::stdin()
+                    .read_line(&mut buf)
+                    .expect("failed to read from stdin");
+                buf
+            }
+        };
+
         let tokenzier = KanpyoCommand::tokenizer(dict, custom_dict);
         let lattice = kanpyo::lattice::Lattice::build(&tokenzier.dict, &input);
         kanpyo::graphviz::Graphviz { lattice }.graphviz(dpi, full_state);
