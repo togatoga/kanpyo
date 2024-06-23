@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use kanpyo::{lattice::node::BOS_EOS_ID, tokenizer::Tokenzier};
 use kanpyo_dict::dict;
 use std::path::PathBuf;
@@ -18,18 +18,24 @@ enum SubCommand {
         /// Input text to analyze [default: stdin]
         #[arg(index = 1)]
         input: Option<String>,
-        /// Dictionary file
-        #[arg(short, long, default_value = "kanpyo-dict/ipa.dict")]
-        dict: PathBuf,
+        /// Dictionary
+        #[arg(short, long, value_enum, default_value = "ipa")]
+        dict: Dict,
+        /// Custom dictionary
+        #[arg(short, long)]
+        custom_dict: Option<PathBuf>,
     },
     /// Output lattice in Graphviz format
     Graphviz {
         /// Input text to analyze
         #[arg(index = 1)]
         input: String,
-        /// Dictionary file
-        #[arg(short, long, default_value = "kanpyo-dict/ipa.dict")]
-        dict: PathBuf,
+        /// Dictionary
+        #[arg(short, long, value_enum, default_value = "ipa")]
+        dict: Dict,
+        /// Custom dictionary
+        #[arg(short, long)]
+        custom_dict: Option<PathBuf>,
         /// Output full state of lattice
         #[arg(short, long, default_value = "false")]
         full_state: bool,
@@ -39,15 +45,41 @@ enum SubCommand {
     },
 }
 
+#[derive(Debug, Clone, ValueEnum)]
+enum Dict {
+    Ipa,
+    // Unidic,
+}
+
+fn get_dict_path(dict: Dict) -> PathBuf {
+    let mut path = dirs::config_dir()
+        .expect("failed to get config dir")
+        .join("kanpyo");
+    match dict {
+        Dict::Ipa => {
+            path.push("ipa.dict");
+        } // Dict::Unidic => {
+          //     path.push("unidic.dict");
+          // }
+    }
+    path
+}
+
 impl KanpyoCommand {
-    fn tokenize(input: Option<String>, dict: PathBuf) {
-        let mut reader =
-            std::io::BufReader::new(std::fs::File::open(dict).expect("failed to open dict"));
-        let tokenzier = Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"));
+    fn tokenizer(dict: Dict, custom_dict: Option<PathBuf>) -> Tokenzier {
+        let dict_file = custom_dict.unwrap_or_else(|| get_dict_path(dict));
+        let mut reader = std::io::BufReader::new(
+            std::fs::File::open(dict_file).expect("failed to open custom dict"),
+        );
+        Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"))
+    }
+
+    fn tokenize(input: Option<String>, dict: Dict, custom_dict: Option<PathBuf>) {
+        let tokenizer = KanpyoCommand::tokenizer(dict, custom_dict);
         loop {
             match &input {
                 Some(text) => {
-                    print_tokens(tokenzier.tokenize(text), &tokenzier.dict);
+                    print_tokens(tokenizer.tokenize(text), &tokenizer.dict);
                     break;
                 }
                 None => {
@@ -55,33 +87,45 @@ impl KanpyoCommand {
                     std::io::stdin()
                         .read_line(&mut buf)
                         .expect("failed to read from stdin");
-                    print_tokens(tokenzier.tokenize(buf.trim_end()), &tokenzier.dict);
+                    if buf.is_empty() {
+                        break;
+                    }
+                    print_tokens(tokenizer.tokenize(buf.trim_end()), &tokenizer.dict);
                 }
             };
         }
     }
-    fn graphviz(input: String, dict: PathBuf, dpi: usize, full_state: bool) {
-        let mut reader =
-            std::io::BufReader::new(std::fs::File::open(dict).expect("failed to open dict"));
-        let tokenzier = Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"));
+    fn graphviz(
+        input: String,
+        dict: Dict,
+        custom_dict: Option<PathBuf>,
+        dpi: usize,
+        full_state: bool,
+    ) {
+        let tokenzier = KanpyoCommand::tokenizer(dict, custom_dict);
         let lattice = kanpyo::lattice::Lattice::build(&tokenzier.dict, &input);
         kanpyo::graphviz::Graphviz { lattice }.graphviz(dpi, full_state);
     }
     fn run(self) {
         match self.subcommand {
-            Some(SubCommand::Tokenize { input, dict }) => {
-                KanpyoCommand::tokenize(input, dict);
+            Some(SubCommand::Tokenize {
+                input,
+                dict,
+                custom_dict,
+            }) => {
+                KanpyoCommand::tokenize(input, dict, custom_dict);
             }
             Some(SubCommand::Graphviz {
                 input,
                 dict,
+                custom_dict,
                 dpi,
-                full_state
+                full_state,
             }) => {
-                KanpyoCommand::graphviz(input, dict, dpi, full_state);
+                KanpyoCommand::graphviz(input, dict, custom_dict, dpi, full_state);
             }
             None => {
-                KanpyoCommand::tokenize(None, PathBuf::from("dict/ipa.dict"));
+                KanpyoCommand::tokenize(None, Dict::Ipa, None);
             }
         }
     }

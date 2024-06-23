@@ -2,13 +2,16 @@
 name = "kanpyo"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+exclude = ["kanpyo-dict/"]
+description = "Japanese Morphological Analyzer"
+keywords = ["japanese", "morphological", "analyzer"]
+categories = ["text-processing", "natural-language-processing"]
+license = "MIT"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
-kanpyo-dict = { path = "kanpyo-dict" }
-
+dirs = "5.0.1"
+kanpyo-dict = { version = "0.1.0", path = "kanpyo-dict" }
 
 [workspace]
 members = [
