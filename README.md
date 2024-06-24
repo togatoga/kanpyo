@@ -20,7 +20,8 @@ You need a dictionary to use `kanpyo` and can build and install a dictionary by 
 
 ```shell script
 cd kanpyo-dict
-cargo run --release --bin ipa-dict-builder -- 
+tar xvf resource/mecab-ipadic-2.7.0-20070801.tar.gz -C resource
+cargo run --release --bin ipa-dict-builder -- --dict resource/mecab-ipadic-2.7.0-20070801
 ```
 
 A dictionary is installed in the following directory:
