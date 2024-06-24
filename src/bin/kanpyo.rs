@@ -109,7 +109,7 @@ impl KanpyoCommand {
                 std::io::stdin()
                     .read_line(&mut buf)
                     .expect("failed to read from stdin");
-                buf
+                buf.trim_end().to_string()
             }
         };
 
