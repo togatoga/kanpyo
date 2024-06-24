@@ -25,7 +25,7 @@ fn get_default_output_path() -> String {
 #[command(name = "IPAdic builder", about = "Builds an ipa.dict", version = "0.1", long_about=None)]
 struct IPADictBuilderCommand {
     /// Path of input dict, e.g. mecab-ipadic-2.7.0-20070801
-    #[arg(short, long, default_value = "resource/mecab-ipadic-2.7.0-20070801")]
+    #[arg(short, long)]
     dict: PathBuf,
     /// Path of output dict, e.g. ipa.dict    
     #[arg(short, long, default_value_t = get_default_output_path())]
@@ -45,8 +45,9 @@ impl IPADictBuilderCommand {
         let dict = builder::build(&config);
 
         let path = PathBuf::from(&self.out);
-        std::fs::create_dir_all(path.parent().expect("failed to get parent dir"))
-            .expect("failed to create dir");
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("failed to create dir");
+        }
         let mut output = std::fs::File::create(&self.out).expect("failed to create file");
         dict.build(&mut output).expect("failed to build dict");
         println!("Built ipa.dict to {}", self.out)
