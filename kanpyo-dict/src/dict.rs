@@ -50,7 +50,7 @@ impl Dict {
     pub fn build<W: Write + Seek>(&self, f: &mut W) -> Result<(), anyhow::Error> {
         let mut zip = zip::ZipWriter::new(f);
         let options = zip::write::SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Stored)
+            .compression_method(zip::CompressionMethod::Deflated)
             .unix_permissions(0o644);
         zip.start_file("morph.dict", options)?;
         self.morphs.write_dict(&mut zip)?;
