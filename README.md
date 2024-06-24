@@ -10,10 +10,16 @@ This is a work in progress. I would break the API without notice.
 
 ## Installation
 
-You can install `kanpyo` via `cargo`:
+You can install `kanpyo` via `cargo` or `git`(development version).
 
 ```shell script
 cargo install kanpyo
+```
+
+or
+
+```shell script
+cargo install --git https://github.com/togatoga/kanpyo kanpyo
 ```
 
 You need a dictionary to use `kanpyo` and can build and install a dictionary by the following.
