@@ -186,7 +186,7 @@ impl Default for DoubleArray {
     }
 }
 
-pub fn build(sorted_unique_keywords: &[String]) -> Result<DoubleArray, anyhow::Error> {
+pub fn build(sorted_unique_keywords: &[String]) -> anyhow::Result<DoubleArray> {
     let mut da = DoubleArray::default();
     da.add(
         ROOT_ID,
@@ -204,7 +204,7 @@ pub fn build(sorted_unique_keywords: &[String]) -> Result<DoubleArray, anyhow::E
 pub fn build_with_ids(
     sorted_unique_keywords: &[String],
     ids: &[KeywordID],
-) -> Result<DoubleArray, anyhow::Error> {
+) -> anyhow::Result<DoubleArray> {
     let mut da = DoubleArray::default();
     da.add(
         ROOT_ID,

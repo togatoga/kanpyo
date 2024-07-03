@@ -1,3 +1,4 @@
+use anyhow::bail;
 use encoding_rs::Encoding;
 use std::{fs, path::Path};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -16,11 +17,11 @@ pub struct Record {
     pub user_data: Vec<String>,
 }
 
-pub fn parse_csv(path: &Path, encoding: &'static Encoding) -> Result<Vec<Record>, anyhow::Error> {
+pub fn parse_csv(path: &Path, encoding: &'static Encoding) -> anyhow::Result<Vec<Record>> {
     let byte = fs::read(path)?;
     let (utf8, _, had_errors) = encoding.decode(&byte);
     if had_errors {
-        return Err(anyhow::anyhow!("Failed to decode"));
+        bail!("Failed to decode");
     }
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)

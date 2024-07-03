@@ -12,7 +12,7 @@ pub struct IndexTable {
 }
 
 impl IndexTable {
-    pub fn build(sorted_keywords: &[String]) -> Result<Self, anyhow::Error> {
+    pub fn build(sorted_keywords: &[String]) -> anyhow::Result<Self> {
         // check sorted
         let mut keys = vec![];
         let mut ids = vec![];

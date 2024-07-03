@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use anyhow::bail;
+
 use crate::{builder::unk, dict::DictReadWrite, morph, morph_feature, trie::da::KeywordID};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,14 +15,14 @@ impl UnkDict {
     pub fn build(
         mut records: Vec<unk::UnkDefRecord>,
         char_class: &[String],
-    ) -> Result<Self, anyhow::Error> {
+    ) -> anyhow::Result<Self> {
         records.sort();
         let mut morphs = morph::Morphs::new();
         let mut feature_table_builder = morph_feature::MorphFeatureTableBuilder::default();
         let mut char_category_to_morph_id = BTreeMap::new();
         for (morph_id, record) in records.iter().enumerate() {
             if record.cost > i16::MAX as i64 {
-                return Err(anyhow::anyhow!("Cost is too large: {}", record.cost));
+                bail!("Cost is too large: {}", record.cost);
             }
             morphs.push(
                 record.left_id as i16,

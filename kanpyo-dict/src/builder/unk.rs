@@ -1,5 +1,6 @@
 use std::{fs, path::Path};
 
+use anyhow::bail;
 use encoding_rs::Encoding;
 
 /// UnkDefRecord represents a record in the unk.def file.
@@ -15,11 +16,11 @@ pub struct UnkDefRecord {
 pub fn parse_unk_def(
     path: &Path,
     encoding: &'static Encoding,
-) -> Result<Vec<UnkDefRecord>, anyhow::Error> {
+) -> anyhow::Result<Vec<UnkDefRecord>> {
     let byte = fs::read(path)?;
     let (utf8, _, had_errors) = encoding.decode(&byte);
     if had_errors {
-        return Err(anyhow::anyhow!("Failed to decode"));
+        bail!("Failed to decode");
     }
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
@@ -27,7 +28,7 @@ pub fn parse_unk_def(
     parse(&mut reader)
 }
 
-fn parse(reader: &mut csv::Reader<&[u8]>) -> Result<Vec<UnkDefRecord>, anyhow::Error> {
+fn parse(reader: &mut csv::Reader<&[u8]>) -> anyhow::Result<Vec<UnkDefRecord>> {
     let mut records = Vec::new();
     for result in reader.records() {
         let record = result?;

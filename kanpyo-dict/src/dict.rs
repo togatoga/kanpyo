@@ -47,7 +47,7 @@ impl Dict {
         }
     }
 
-    pub fn build<W: Write + Seek>(&self, f: &mut W) -> Result<(), anyhow::Error> {
+    pub fn build<W: Write + Seek>(&self, f: &mut W) -> anyhow::Result<()> {
         let mut zip = zip::ZipWriter::new(f);
         let options = zip::write::SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Deflated)
@@ -66,7 +66,7 @@ impl Dict {
         self.unk_dict.write_dict(&mut zip)?;
         Ok(())
     }
-    pub fn load<R: Read + Seek>(r: &mut R) -> Result<Self, anyhow::Error> {
+    pub fn load<R: Read + Seek>(r: &mut R) -> anyhow::Result<Self> {
         let mut zip = zip::ZipArchive::new(r)?;
         let morphs = {
             let morph_dict = zip.by_name("morph.dict")?;

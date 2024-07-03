@@ -4,6 +4,7 @@ use std::{
     path::Path,
 };
 
+use anyhow::bail;
 use encoding_rs::Encoding;
 use regex::Regex;
 
@@ -15,14 +16,11 @@ pub struct CharClassDef {
     pub group_map: Vec<bool>,
 }
 
-pub fn parse_char_def(
-    path: &Path,
-    encoding: &'static Encoding,
-) -> Result<CharClassDef, anyhow::Error> {
+pub fn parse_char_def(path: &Path, encoding: &'static Encoding) -> anyhow::Result<CharClassDef> {
     let byte = fs::read(path)?;
     let (utf8, _, had_errors) = encoding.decode(&byte);
     if had_errors {
-        return Err(anyhow::anyhow!("Failed to decode"));
+        bail!("Failed to decode");
     }
 
     let reader = BufReader::new(utf8.as_bytes());
@@ -85,7 +83,7 @@ fn parse(reader: BufReader<&[u8]>) -> Result<CharClassDef, anyhow::Error> {
                 char_category[x as usize] = cc2id[cc];
             }
         } else {
-            return Err(anyhow::anyhow!("Invalid format error: {}", line));
+            bail!("Invalid format error: {}", line);
         }
     }
     Ok(CharClassDef {

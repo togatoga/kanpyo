@@ -12,13 +12,13 @@ pub struct MatrixDef {
     pub data: Vec<i16>,
 }
 
-pub fn parse_matrix_def(path: &Path) -> Result<MatrixDef, anyhow::Error> {
+pub fn parse_matrix_def(path: &Path) -> anyhow::Result<MatrixDef> {
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
     parse(&mut reader)
 }
 
-fn parse(reader: &mut BufReader<File>) -> Result<MatrixDef, anyhow::Error> {
+fn parse(reader: &mut BufReader<File>) -> anyhow::Result<MatrixDef> {
     let mut lines = reader.lines();
     // row col
     let line = lines.next().expect("Failed to read row and col")?;
