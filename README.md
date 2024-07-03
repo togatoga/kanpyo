@@ -111,3 +111,4 @@ kanpyo graphviz "自然言語処理" | dot -Tpng -o lattice.png
 - [ ] Support various dictionaries(Sudachi, UniDic, neologd, etc.)
 - [ ] Support server mode
 - [ ] Support search mode
+- [ ] Tests for load dictionary and tokenize
