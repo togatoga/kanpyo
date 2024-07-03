@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/kanpyo.svg)](https://crates.io/crates/kanpyo)
 
-Kanpyo is Japanese morphological analyzer written in Rust inspired by [Kagome](https://github.com/ikawaha/kagome).
+Kanpyo is Japanese morphological analyzer written in Rust inspired by [ikawaha/Kagome](https://github.com/ikawaha/kagome).
 
 ## Caution
 
