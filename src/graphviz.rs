@@ -6,7 +6,7 @@ pub struct Graphviz<'a> {
     pub lattice: Lattice<'a>,
 }
 
-impl<'a> Graphviz<'a> {
+impl Graphviz<'_> {
     fn bfs(&self, start: Node, bests: &BTreeSet<Node>) -> Vec<Node> {
         let mut visited = BTreeSet::new();
         let mut queue = VecDeque::default();
