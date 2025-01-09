@@ -19,59 +19,92 @@ impl<'a> Lattice<'a> {
         }
     }
 
+    /// Searches for known words in the dictionary at the given `byte_pos`.
+    /// Returns `true` if at least one match is found, otherwise `false`.
+    fn process_known_words(&mut self, byte_pos: usize, char_pos: usize, input: &str) -> bool {
+        let text = &input[byte_pos..];
+        if let Some(ids_and_byte_lengths) = self.dict.index_table.search_common_prefix_of(text) {
+            for (id, byte_length) in ids_and_byte_lengths {
+                let end_byte_pos = byte_pos + byte_length;
+                let surface = &input[byte_pos..end_byte_pos];
+                self.add_known_node(id, byte_pos, char_pos, surface);
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Processes unknown words if needed. This is triggered either if no known words matched
+    /// or if the dictionary's `invoke_list` requires unknown processing for this character category.
+    fn process_unknown_words(
+        &mut self,
+        byte_pos: usize,
+        char_pos: usize,
+        ch: char,
+        input: &str,
+        matched_known: bool,
+    ) {
+        // Determine the character category of `ch`.
+        let char_category = self.dict.char_category_def.char_category(ch);
+
+        // If no known matches or if the dictionary explicitly requires unknown processing, proceed.
+        if !matched_known || self.dict.char_category_def.invoke_list[char_category as usize] {
+            const MAXIMUM_UNKNOWN_WORD_LENGTH: usize = 1024;
+
+            // If this category supports grouping, we can bundle consecutive characters of the same type.
+            let is_group = *self
+                .dict
+                .char_category_def
+                .group_list
+                .get(char_category as usize)
+                .unwrap_or(&false);
+
+            // Determine how far the unknown sequence goes.
+            let mut end_byte_pos = byte_pos + ch.len_utf8();
+            let mut unknown_word_length = 1;
+
+            // Extend the unknown sequence while the next character is in the same category.
+            if is_group {
+                for next_char in input[end_byte_pos..].chars() {
+                    let next_category = self.dict.char_category_def.char_category(next_char);
+                    if next_category != char_category {
+                        break;
+                    }
+                    end_byte_pos += next_char.len_utf8();
+                    unknown_word_length += 1;
+
+                    // Limit the maximum length of unknown sequences.
+                    if unknown_word_length >= MAXIMUM_UNKNOWN_WORD_LENGTH {
+                        break;
+                    }
+                }
+            }
+
+            // Get the registered (morph_id, count) for this character category in the unknown dictionary.
+            if let Some(&(morph_id, count)) = self
+                .dict
+                .unk_dict
+                .char_category_to_morph_id
+                .get(&char_category)
+            {
+                let surface = &input[byte_pos..end_byte_pos];
+                for i in 0..count {
+                    self.add_unknown_node(morph_id + i as isize, byte_pos, char_pos, surface);
+                }
+            }
+        }
+    }
+
     pub fn build(dict: &'a Dict, input: &str) -> Self {
         let mut byte_pos = 0;
         let mut la = Lattice::new(dict, input);
         la.add_bos_node();
-        const MAXIMUM_UNKNOWN_WORD_LENGTH: usize = 1024;
         for (char_pos, ch) in input.chars().enumerate() {
-            let mut any_match = false;
             // Known words
-            let text = input.get(byte_pos..).expect("byte_pos is out of range");
-            if let Some(ids_and_byte_lenghts) = dict.index_table.search_common_prefix_of(text) {
-                any_match = true;
-                for (id, byte_length) in ids_and_byte_lenghts {
-                    let surface = input
-                        .get(byte_pos..byte_pos + byte_length)
-                        .expect("byte_pos is out of range");
-                    la.add_known_node(id, byte_pos, char_pos, surface);
-                    // la.add_node(id, byte_pos, char_pos, NodeClass::Known, Some(surface));
-                }
-            }
-            let char_category = dict.char_category_def.char_category(ch);
-            if !any_match || dict.char_category_def.invoke_list[char_category as usize] {
-                // Unknown words
-                let is_group = *dict
-                    .char_category_def
-                    .group_list
-                    .get(char_category as usize)
-                    .unwrap_or(&false);
-                let mut end_byte_pos = byte_pos + ch.len_utf8();
-                let mut unknown_word_length = 1;
-                if is_group {
-                    for ch in input[end_byte_pos..].chars() {
-                        if dict.char_category_def.char_category(ch) != char_category {
-                            break;
-                        }
-                        end_byte_pos += ch.len_utf8();
-                        unknown_word_length += 1;
-                        if unknown_word_length >= MAXIMUM_UNKNOWN_WORD_LENGTH {
-                            break;
-                        }
-                    }
-                }
-
-                if let Some(&(morph_id, count)) =
-                    dict.unk_dict.char_category_to_morph_id.get(&char_category)
-                {
-                    let surface = input
-                        .get(byte_pos..end_byte_pos)
-                        .expect("byte_pos is out of range");
-                    for i in 0..count {
-                        la.add_unknown_node(morph_id + i as isize, byte_pos, char_pos, surface);
-                    }
-                }
-            }
+            let matched_known = la.process_known_words(byte_pos, char_pos, input);
+            // Unknown words
+            la.process_unknown_words(byte_pos, char_pos, ch, input, matched_known);
             byte_pos += ch.len_utf8();
         }
         la.add_eos_node(input);
