@@ -129,10 +129,10 @@ impl Graphviz<'_> {
                     .map(|&id| (id, &self.lattice.nodes[*i]))
             }) {
                 for (from_id, from_node) in
-                    self.lattice.edges[node.char_pos()].iter().filter_map(|i| {
+                    self.lattice.edges[node.char_pos()].iter().filter_map(|&i| {
                         node_to_visible_id
-                            .get(&self.lattice.nodes[*i])
-                            .map(|&id| (id, &self.lattice.nodes[*i]))
+                            .get(&self.lattice.nodes[i])
+                            .map(|&id| (id, &self.lattice.nodes[i]))
                     })
                 {
                     if from_id == id {

@@ -5,17 +5,17 @@ use crate::{
     token::{Token, TokenClass},
 };
 
-pub struct Tokenzier {
+pub struct Tokenizer {
     pub dict: Dict,
 }
 
-impl Tokenzier {
+impl Tokenizer {
     pub fn new(dict: Dict) -> Self {
-        Tokenzier { dict }
+        Tokenizer { dict }
     }
 }
 
-impl Tokenzier {
+impl Tokenizer {
     pub fn tokenize(&self, input: &str) -> Vec<Token> {
         let la = lattice::Lattice::build(&self.dict, input);
         let nodes = la.viterbi();

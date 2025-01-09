@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand, ValueEnum};
-use kanpyo::{lattice::node::BOS_EOS_ID, tokenizer::Tokenzier};
+use kanpyo::{lattice::node::BOS_EOS_ID, tokenizer::Tokenizer};
 use kanpyo_dict::dict;
 use std::path::PathBuf;
 
@@ -66,12 +66,12 @@ fn get_dict_path(dict: Dict) -> PathBuf {
 }
 
 impl KanpyoCommand {
-    fn tokenizer(dict: Dict, custom_dict: Option<PathBuf>) -> Tokenzier {
+    fn tokenizer(dict: Dict, custom_dict: Option<PathBuf>) -> Tokenizer {
         let dict_file = custom_dict.unwrap_or_else(|| get_dict_path(dict));
         let mut reader = std::io::BufReader::new(
             std::fs::File::open(dict_file).expect("failed to open custom dict"),
         );
-        Tokenzier::new(dict::Dict::load(&mut reader).expect("failed to load dict"))
+        Tokenizer::new(dict::Dict::load(&mut reader).expect("failed to load dict"))
     }
 
     fn tokenize(input: Option<String>, dict: Dict, custom_dict: Option<PathBuf>) {
@@ -113,8 +113,8 @@ impl KanpyoCommand {
             }
         };
 
-        let tokenzier = KanpyoCommand::tokenizer(dict, custom_dict);
-        let lattice = kanpyo::lattice::Lattice::build(&tokenzier.dict, &input);
+        let Tokenizer = KanpyoCommand::tokenizer(dict, custom_dict);
+        let lattice = kanpyo::lattice::Lattice::build(&Tokenizer.dict, &input);
         kanpyo::graphviz::Graphviz { lattice }.graphviz(dpi, full_state);
     }
     fn run(self) {
