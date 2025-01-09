@@ -145,29 +145,23 @@ impl KanpyoCommand {
 fn print_tokens(tokens: Vec<kanpyo::token::Token>, dict: &dict::Dict) {
     for token in tokens {
         let morph_features = if token.id != BOS_EOS_ID {
-            let mut features = vec![];
             match token.class {
-                kanpyo::token::TokenClass::Known => {
-                    for idx in dict.morph_feature_table.morph_features[token.id as usize - 1].iter()
-                    {
-                        features.push(dict.morph_feature_table.name_list[*idx as usize].clone());
-                    }
-                }
-                kanpyo::token::TokenClass::Unknown => {
-                    for idx in dict.unk_dict.morph_feature_table.morph_features
-                        [token.id as usize - 1]
-                        .iter()
-                    {
-                        features.push(
-                            dict.unk_dict.morph_feature_table.name_list[*idx as usize].clone(),
-                        );
-                    }
-                }
-                kanpyo::token::TokenClass::Dummy => {}
+                kanpyo::token::TokenClass::Known => dict.morph_feature_table.morph_features
+                    [token.id as usize - 1]
+                    .iter()
+                    .map(|&idx| dict.morph_feature_table.name_list[idx as usize].clone())
+                    .collect::<Vec<_>>(),
+                kanpyo::token::TokenClass::Unknown => dict
+                    .unk_dict
+                    .morph_feature_table
+                    .morph_features[token.id as usize - 1]
+                    .iter()
+                    .map(|&idx| dict.unk_dict.morph_feature_table.name_list[idx as usize].clone())
+                    .collect::<Vec<_>>(),
+                kanpyo::token::TokenClass::Dummy => Vec::new(),
             }
-            features
         } else {
-            vec![]
+            Vec::new()
         };
         println!("{}\t{}", token.surface, morph_features.join(","))
     }
