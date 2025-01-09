@@ -113,8 +113,8 @@ impl KanpyoCommand {
             }
         };
 
-        let Tokenizer = KanpyoCommand::tokenizer(dict, custom_dict);
-        let lattice = kanpyo::lattice::Lattice::build(&Tokenizer.dict, &input);
+        let tokenizer = KanpyoCommand::tokenizer(dict, custom_dict);
+        let lattice = kanpyo::lattice::Lattice::build(&tokenizer.dict, &input);
         kanpyo::graphviz::Graphviz { lattice }.graphviz(dpi, full_state);
     }
     fn run(self) {
