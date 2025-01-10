@@ -1,5 +1,5 @@
 use clap::{Parser, ValueEnum};
-use kanpyo_dict::builder::{self, config::Config};
+use kanpyo_dict::builder::{config::Config, DictionaryBuilder};
 
 use std::path::PathBuf;
 
@@ -42,7 +42,7 @@ impl IPADictBuilderCommand {
             Encoding::Utf8 => encoding_rs::UTF_8,
         };
         let config = Config::new(&self.dict, encoding);
-        let dict = builder::build(&config);
+        let dict = DictionaryBuilder::from_config(&config);
 
         let path = PathBuf::from(&self.out);
         if let Some(parent) = path.parent() {

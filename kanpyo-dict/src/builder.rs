@@ -14,81 +14,85 @@ pub mod matrix_def;
 pub mod record;
 pub mod unk;
 
-pub fn build(config: &Config) -> dict::Dict {
-    let csv_files = config
-        .root_path
-        .read_dir()
-        .expect("Failed to read dir")
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.path().extension().map_or(false, |ext| ext == "csv"))
-        .map(|entry| entry.path())
-        .collect::<Vec<_>>();
+pub struct DictionaryBuilder {}
 
-    let sorted_records = csv_files
-        .into_iter()
-        .flat_map(|csv| parse_csv(&csv, config.encoding).expect("Failed to parse csv"))
-        .sorted()
-        .collect::<Vec<_>>();
-
-    let mut morphs = Morphs::new();
-    let mut sorted_keywords = vec![];
-    let mut morph_feature_table_builder = morph_feature::MorphFeatureTableBuilder::default();
-    for record in &sorted_records {
-        if record.cost > i16::MAX as i64 {
-            panic!("Cost is too large: {}", record.cost);
-        }
-        sorted_keywords.push(record.surface.clone());
-        morphs.push(
-            record.left_id as i16,
-            record.right_id as i16,
-            record.cost as i16,
-        );
-        // 品詞
-        // 品詞細分類1
-        // 品詞細分類2
-        // 品詞細分類3
-        let morph_features = &record
-            .user_data
-            .iter()
-            .map(|s| s.as_str())
+impl DictionaryBuilder {
+    pub fn from_config(config: &Config) -> dict::Dict {
+        let csv_files = config
+            .root_path
+            .read_dir()
+            .expect("Failed to read dir")
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| entry.path().extension().map_or(false, |ext| ext == "csv"))
+            .map(|entry| entry.path())
             .collect::<Vec<_>>();
-        morph_feature_table_builder.push(morph_features);
+
+        let sorted_records = csv_files
+            .into_iter()
+            .flat_map(|csv| parse_csv(&csv, config.encoding).expect("Failed to parse csv"))
+            .sorted()
+            .collect::<Vec<_>>();
+
+        let mut morphs = Morphs::new();
+        let mut sorted_keywords = vec![];
+        let mut morph_feature_table_builder = morph_feature::MorphFeatureTableBuilder::default();
+        for record in &sorted_records {
+            if record.cost > i16::MAX as i64 {
+                panic!("Cost is too large: {}", record.cost);
+            }
+            sorted_keywords.push(record.surface.clone());
+            morphs.push(
+                record.left_id as i16,
+                record.right_id as i16,
+                record.cost as i16,
+            );
+            // 品詞
+            // 品詞細分類1
+            // 品詞細分類2
+            // 品詞細分類3
+            let morph_features = &record
+                .user_data
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>();
+            morph_feature_table_builder.push(morph_features);
+        }
+        let morph_feature_table = morph_feature_table_builder.build();
+        let connection_table = ConnectionTable::from(
+            matrix_def::parse_matrix_def(&config.root_path.join(config.matrix_def_file_name))
+                .expect("Failed to parse matrix.def"),
+        );
+
+        // index
+        let index = index::IndexTable::build(&sorted_keywords).expect("Failed to build index");
+
+        // char.def
+        let char_category_def = CharCategoryDef::new(
+            char_def::parse_char_def(
+                &config.root_path.join(config.char_def_file_name),
+                config.encoding,
+            )
+            .expect("Failed to parse char.def"),
+        );
+
+        // unk.def
+        let unk_dict = unk_dict::UnkDict::build(
+            parse_unk_def(
+                &config.root_path.join(config.unk_def_file_name),
+                config.encoding,
+            )
+            .expect("Failed to parse unk.def"),
+            &char_category_def.char_class,
+        )
+        .expect("Failed to build unk dict");
+
+        dict::Dict::new(
+            morphs,
+            morph_feature_table,
+            connection_table,
+            index,
+            char_category_def,
+            unk_dict,
+        )
     }
-    let morph_feature_table = morph_feature_table_builder.build();
-    let connection_table = ConnectionTable::from(
-        matrix_def::parse_matrix_def(&config.root_path.join(config.matrix_def_file_name))
-            .expect("Failed to parse matrix.def"),
-    );
-
-    // index
-    let index = index::IndexTable::build(&sorted_keywords).expect("Failed to build index");
-
-    // char.def
-    let char_category_def = CharCategoryDef::new(
-        char_def::parse_char_def(
-            &config.root_path.join(config.char_def_file_name),
-            config.encoding,
-        )
-        .expect("Failed to parse char.def"),
-    );
-
-    // unk.def
-    let unk_dict = unk_dict::UnkDict::build(
-        parse_unk_def(
-            &config.root_path.join(config.unk_def_file_name),
-            config.encoding,
-        )
-        .expect("Failed to parse unk.def"),
-        &char_category_def.char_class,
-    )
-    .expect("Failed to build unk dict");
-
-    dict::Dict::new(
-        morphs,
-        morph_feature_table,
-        connection_table,
-        index,
-        char_category_def,
-        unk_dict,
-    )
 }
