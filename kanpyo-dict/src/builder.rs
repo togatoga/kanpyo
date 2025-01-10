@@ -1,3 +1,6 @@
+use std::{fs, path::PathBuf};
+
+use anyhow::{Context, Result};
 use itertools::Itertools;
 use unk::parse_unk_def;
 
@@ -17,15 +20,24 @@ pub mod unk;
 pub struct DictionaryBuilder {}
 
 impl DictionaryBuilder {
-    pub fn from_config(config: &Config) -> Result<dict::Dict, anyhow::Error> {
-        let csv_files = config
-            .root_path
-            .read_dir()
-            .expect("Failed to read dir")
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| entry.path().extension().map_or(false, |ext| ext == "csv"))
-            .map(|entry| entry.path())
+    fn collect_csv_files(config: &Config) -> Result<Vec<PathBuf>> {
+        let csv_files = fs::read_dir(config.root_path)
+            .with_context(|| format!("Failed to read directory: {:?}", config.root_path))?
+            .filter_map(|entry| {
+                let path = entry.ok()?.path();
+                if path.extension().map_or(false, |ext| ext == "csv") {
+                    Some(path)
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
+    
+        Ok(csv_files)
+    }
+
+    pub fn from_config(config: &Config) -> Result<dict::Dict, anyhow::Error> {
+        let csv_files = Self::collect_csv_files(config)?;
 
         let sorted_records = csv_files
             .into_iter()
