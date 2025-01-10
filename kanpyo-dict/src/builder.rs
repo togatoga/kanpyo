@@ -17,7 +17,7 @@ pub mod unk;
 pub struct DictionaryBuilder {}
 
 impl DictionaryBuilder {
-    pub fn from_config(config: &Config) -> dict::Dict {
+    pub fn from_config(config: &Config) -> Result<dict::Dict, anyhow::Error> {
         let csv_files = config
             .root_path
             .read_dir()
@@ -86,13 +86,13 @@ impl DictionaryBuilder {
         )
         .expect("Failed to build unk dict");
 
-        dict::Dict::new(
+        Ok(dict::Dict::new(
             morphs,
             morph_feature_table,
             connection_table,
             index,
             char_category_def,
             unk_dict,
-        )
+        ))
     }
 }

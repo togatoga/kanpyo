@@ -42,7 +42,7 @@ impl IPADictBuilderCommand {
             Encoding::Utf8 => encoding_rs::UTF_8,
         };
         let config = Config::new(&self.dict, encoding);
-        let dict = DictionaryBuilder::from_config(&config);
+        let dict = DictionaryBuilder::from_config(&config).expect("failed to build dict");
 
         let path = PathBuf::from(&self.out);
         if let Some(parent) = path.parent() {
