@@ -32,7 +32,7 @@ impl DictionaryBuilder {
                 }
             })
             .collect::<Vec<_>>();
-    
+
         Ok(csv_files)
     }
 
