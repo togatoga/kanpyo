@@ -10,7 +10,7 @@ license = "MIT"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
-dirs = "5.0.1"
+dirs = "6.0.0"
 kanpyo-dict = { version = "0.1.0", path = "kanpyo-dict" }
 
 [workspace]
