@@ -27,31 +27,27 @@ impl Node {
     pub fn id(&self) -> KeywordID {
         match self {
             Node::Dummy { .. } => BOS_EOS_ID,
-            Node::Known(node) => node.id,
-            Node::Unknown(node) => node.id,
+            Node::Known(word) | Node::Unknown(word) => word.id,
         }
     }
     pub fn byte_pos(&self) -> usize {
         match self {
             Node::Dummy { byte_pos, .. } => *byte_pos,
-            Node::Known(node) => node.byte_pos,
-            Node::Unknown(node) => node.byte_pos,
+            Node::Known(word) | Node::Unknown(word) => word.byte_pos,
         }
     }
 
     pub fn char_pos(&self) -> usize {
         match self {
             Node::Dummy { char_pos, .. } => *char_pos,
-            Node::Known(node) => node.char_pos,
-            Node::Unknown(node) => node.char_pos,
+            Node::Known(word) | Node::Unknown(word) => word.char_pos,
         }
     }
 
     pub fn morph(&self) -> &Morph {
         match self {
             Node::Dummy { morph, .. } => morph,
-            Node::Known(node) => &node.morph,
-            Node::Unknown(node) => &node.morph,
+            Node::Known(word) | Node::Unknown(word) => &word.morph,
         }
     }
 }
