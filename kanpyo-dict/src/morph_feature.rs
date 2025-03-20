@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
+use bincode::{Decode, Encode};
 
 use crate::dict::DictReadWrite;
 
 // MorphFeatureTable represents a table for managing part of speeches.
-#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Encode, Decode)]
 pub struct MorphFeatureTable {
     pub morph_features: Vec<MorphFeatureIDs>,
     pub name_list: Vec<String>,
@@ -19,7 +19,7 @@ const MAX_FEATURE_ID: MorphFeatureID = MorphFeatureID::MAX;
 
 impl DictReadWrite for MorphFeatureTable {
     fn write_dict<W: std::io::Write>(&self, w: &mut W) -> std::io::Result<()> {
-        match bincode::serialize(self) {
+        match bincode::encode_to_vec(self, bincode::config::standard()) {
             Ok(enc) => w.write_all(&enc),
             Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
         }
@@ -30,8 +30,8 @@ impl DictReadWrite for MorphFeatureTable {
     {
         let mut buf = Vec::new();
         r.read_to_end(&mut buf)?;
-        match bincode::deserialize(&buf) {
-            Ok(ret) => Ok(ret),
+        match bincode::decode_from_slice(&buf, bincode::config::standard()) {
+            Ok(ret) => Ok(ret.0),
             Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
         }
     }
