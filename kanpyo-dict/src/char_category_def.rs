@@ -43,7 +43,7 @@ impl DictReadWrite for CharCategoryDef {
         let mut buf = Vec::new();
         match bincode::encode_into_std_write(self, &mut buf, bincode::config::standard()) {
             Ok(_) => w.write_all(&buf),
-            Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
         }
     }
 

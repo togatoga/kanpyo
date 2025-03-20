@@ -25,7 +25,7 @@ impl DictionaryBuilder {
             .with_context(|| format!("Failed to read directory: {:?}", config.root_path))?
             .filter_map(|entry| {
                 let path = entry.ok()?.path();
-                if path.extension().map_or(false, |ext| ext == "csv") {
+                if path.extension().is_some_and(|ext| ext == "csv") {
                     Some(path)
                 } else {
                     None

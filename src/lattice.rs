@@ -131,7 +131,7 @@ impl<'a> Lattice<'a> {
                         target_morph.left_id as usize,
                     ) as i32;
                     let total_cost = (prev_cost + cost + matrix_cost).min(INF);
-                    dp[i].map_or(true, |c| total_cost < c).then(|| {
+                    dp[i].is_none_or(|c| total_cost < c).then(|| {
                         dp[i] = Some(total_cost);
                         pre_nodes[i] = Some(j);
                     });
