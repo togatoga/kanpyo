@@ -1,5 +1,5 @@
 use crate::{builder::char_def::CharClassDef, dict::DictReadWrite};
-use serde::{Deserialize, Serialize};
+use bincode::{Decode, Encode};
 
 // CharClass represents  a character class.
 type CharClass = Vec<String>;
@@ -11,7 +11,7 @@ type InvokeList = Vec<bool>;
 type GroupList = Vec<bool>;
 
 // CharTable represents character category table.
-#[derive(Debug, PartialEq, Clone, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Eq, Decode, Encode)]
 pub struct CharCategoryDef {
     pub char_class: CharClass,
     pub char_category: CharCategory,
@@ -41,14 +41,19 @@ impl CharCategoryDef {
 impl DictReadWrite for CharCategoryDef {
     fn write_dict<W: std::io::Write>(&self, w: &mut W) -> std::io::Result<()> {
         let mut buf = Vec::new();
-        bincode::serialize_into(&mut buf, self).unwrap();
-        w.write_all(&buf)
+        match bincode::encode_into_std_write(self, &mut buf, bincode::config::standard()) {
+            Ok(_) => w.write_all(&buf),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+        }
     }
 
     fn from_dict<R: std::io::Read>(r: &mut R) -> std::io::Result<Self> {
         let mut buf = Vec::new();
         r.read_to_end(&mut buf)?;
-        bincode::deserialize(&buf).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+        match bincode::decode_from_slice(&buf, bincode::config::standard()) {
+            Ok(v) => Ok(v.0),
+            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+        }
     }
 }
 
