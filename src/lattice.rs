@@ -12,7 +12,7 @@ pub struct Lattice<'a> {
 impl<'a> Lattice<'a> {
     fn new(dict: &'a Dict, input: &str) -> Self {
         let edges = vec![vec![]; input.chars().count() + 2];
-        Lattice {
+        Self {
             dict,
             nodes: vec![],
             edges,
@@ -23,16 +23,18 @@ impl<'a> Lattice<'a> {
     /// Returns `true` if at least one match is found, otherwise `false`.
     fn process_known_words(&mut self, byte_pos: usize, char_pos: usize, input: &str) -> bool {
         let text = &input[byte_pos..];
-        if let Some(ids_and_byte_lengths) = self.dict.index_table.search_common_prefix_of(text) {
-            for (id, byte_length) in ids_and_byte_lengths {
-                let end_byte_pos = byte_pos + byte_length;
-                let surface = &input[byte_pos..end_byte_pos];
-                self.add_known_node(id, byte_pos, char_pos, surface);
-            }
-            true
-        } else {
-            false
-        }
+        self.dict
+            .index_table
+            .search_common_prefix_of(text)
+            .map(|ids_and_byte_lengths| {
+                for (id, byte_length) in ids_and_byte_lengths {
+                    let end_byte_pos = byte_pos + byte_length;
+                    let surface = &input[byte_pos..end_byte_pos];
+                    self.add_known_node(id, byte_pos, char_pos, surface);
+                }
+                true
+            })
+            .unwrap_or(false)
     }
 
     /// Processes unknown words if needed. This is triggered either if no known words matched
@@ -98,7 +100,7 @@ impl<'a> Lattice<'a> {
 
     pub fn build(dict: &'a Dict, input: &str) -> Self {
         let mut byte_pos = 0;
-        let mut la = Lattice::new(dict, input);
+        let mut la = Self::new(dict, input);
         la.add_bos_node();
         for (char_pos, ch) in input.chars().enumerate() {
             // Known words
@@ -139,13 +141,14 @@ impl<'a> Lattice<'a> {
             }
         }
 
-        let mut pos: usize = self.nodes.len() - 1;
-        let mut paths = vec![];
+        let mut pos = self.nodes.len() - 1;
+        let mut paths = Vec::new();
+
         while let Some(pre) = pre_nodes[pos] {
-            let node = self.nodes[pos].clone();
-            paths.push(node);
+            paths.push(self.nodes[pos].clone());
             pos = pre;
         }
+
         paths.reverse();
         paths
     }
