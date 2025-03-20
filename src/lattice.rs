@@ -143,12 +143,12 @@ impl<'a> Lattice<'a> {
 
         let mut pos = self.nodes.len() - 1;
         let mut paths = Vec::new();
-        
+
         while let Some(pre) = pre_nodes[pos] {
             paths.push(self.nodes[pos].clone());
             pos = pre;
         }
-        
+
         paths.reverse();
         paths
     }
