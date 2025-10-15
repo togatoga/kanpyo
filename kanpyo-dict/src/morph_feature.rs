@@ -21,7 +21,7 @@ impl DictReadWrite for MorphFeatureTable {
     fn write_dict<W: std::io::Write>(&self, w: &mut W) -> std::io::Result<()> {
         match bincode::encode_to_vec(self, bincode::config::standard()) {
             Ok(enc) => w.write_all(&enc),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            Err(e) => Err(std::io::Error::other(e)),
         }
     }
     fn from_dict<R: std::io::Read>(r: &mut R) -> std::io::Result<Self>
@@ -32,7 +32,7 @@ impl DictReadWrite for MorphFeatureTable {
         r.read_to_end(&mut buf)?;
         match bincode::decode_from_slice(&buf, bincode::config::standard()) {
             Ok(ret) => Ok(ret.0),
-            Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+            Err(e) => Err(std::io::Error::other(e)),
         }
     }
 }
