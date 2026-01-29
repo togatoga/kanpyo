@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::dict::DictReadWrite;
+use crate::error::Result;
 
 const INIT_BUFFER_SIZE: usize = 50 * 1024;
 const EXPAND_RATIO: usize = 2;
@@ -164,12 +165,13 @@ impl DoubleArray {
             }
             let ahead = self.0[p as usize].base + TERMINATOR as i32;
             let node = self.0.get(ahead as usize);
-            if let Some(node) = node {
-                if node.check == p && node.base < 0 {
-                    // found
-                    let id = -self.0[ahead as usize].base as KeywordID;
-                    id_and_byte_lengths.push((id, i + 1));
-                }
+            if let Some(node) = node
+                && node.check == p
+                && node.base < 0
+            {
+                // found
+                let id = -self.0[ahead as usize].base as KeywordID;
+                id_and_byte_lengths.push((id, i + 1));
             }
         }
         if id_and_byte_lengths.is_empty() {
@@ -186,7 +188,7 @@ impl Default for DoubleArray {
     }
 }
 
-pub fn build(sorted_unique_keywords: &[String]) -> anyhow::Result<DoubleArray> {
+pub fn build(sorted_unique_keywords: &[String]) -> Result<DoubleArray> {
     let mut da = DoubleArray::default();
     da.add(
         ROOT_ID,
@@ -201,10 +203,7 @@ pub fn build(sorted_unique_keywords: &[String]) -> anyhow::Result<DoubleArray> {
     Ok(da)
 }
 
-pub fn build_with_ids(
-    sorted_unique_keywords: &[String],
-    ids: &[KeywordID],
-) -> anyhow::Result<DoubleArray> {
+pub fn build_with_ids(sorted_unique_keywords: &[String], ids: &[KeywordID]) -> Result<DoubleArray> {
     let mut da = DoubleArray::default();
     da.add(
         ROOT_ID,

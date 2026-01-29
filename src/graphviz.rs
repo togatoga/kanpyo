@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-use crate::lattice::{node::Node, Lattice};
+use crate::lattice::{Lattice, node::Node};
 
 pub struct Graphviz<'a> {
     pub lattice: Lattice<'a>,

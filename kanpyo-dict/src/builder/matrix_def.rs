@@ -4,6 +4,8 @@ use std::{
     path::Path,
 };
 
+use crate::error::{KanpyoError, Result};
+
 // MatrixDef represents matrix.def
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub struct MatrixDef {
@@ -12,13 +14,13 @@ pub struct MatrixDef {
     pub data: Vec<i16>,
 }
 
-pub fn parse_matrix_def(path: &Path) -> anyhow::Result<MatrixDef> {
+pub fn parse_matrix_def(path: &Path) -> Result<MatrixDef> {
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
     parse(&mut reader)
 }
 
-fn parse(reader: &mut BufReader<File>) -> anyhow::Result<MatrixDef> {
+fn parse(reader: &mut BufReader<File>) -> Result<MatrixDef> {
     let mut lines = reader.lines();
     // row col
     let line = lines.next().expect("Failed to read row and col")?;
@@ -27,7 +29,10 @@ fn parse(reader: &mut BufReader<File>) -> anyhow::Result<MatrixDef> {
         .map(|value| value.parse::<usize>().expect("Failed to parse row and col"))
         .collect::<Vec<usize>>();
     if values.len() != 2 {
-        return Err(anyhow::anyhow!("Invalid row and col: {:?}", line));
+        return Err(KanpyoError::InvalidFormat(format!(
+            "Invalid row and col: {:?}",
+            line
+        )));
     }
     let row = values[0];
     let col = values[1];
@@ -38,14 +43,20 @@ fn parse(reader: &mut BufReader<File>) -> anyhow::Result<MatrixDef> {
             .map(|value| value.parse::<i64>().expect("Failed to parse matrix value"))
             .collect::<Vec<i64>>();
         if values.len() != 3 {
-            return Err(anyhow::anyhow!("Invalid matrix value: {:?}", line));
+            return Err(KanpyoError::InvalidFormat(format!(
+                "Invalid matrix value: {:?}",
+                line
+            )));
         }
         // i64 -> usize return err
         let r = usize::try_from(values[0])?;
         let c = usize::try_from(values[1])?;
         let value = i16::try_from(values[2])?;
         if r >= row || c >= col {
-            return Err(anyhow::anyhow!("Invalid matrix index: {:?}", line));
+            return Err(KanpyoError::InvalidFormat(format!(
+                "Invalid matrix index: {:?}",
+                line
+            )));
         }
         data[c * row + r] = value;
     }

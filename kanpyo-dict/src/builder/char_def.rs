@@ -4,9 +4,10 @@ use std::{
     path::Path,
 };
 
-use anyhow::bail;
 use encoding_rs::Encoding;
 use regex::Regex;
+
+use crate::error::{KanpyoError, Result};
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub struct CharClassDef {
@@ -16,18 +17,18 @@ pub struct CharClassDef {
     pub group_map: Vec<bool>,
 }
 
-pub fn parse_char_def(path: &Path, encoding: &'static Encoding) -> anyhow::Result<CharClassDef> {
+pub fn parse_char_def(path: &Path, encoding: &'static Encoding) -> Result<CharClassDef> {
     let byte = fs::read(path)?;
     let (utf8, _, had_errors) = encoding.decode(&byte);
     if had_errors {
-        bail!("Failed to decode");
+        return Err(KanpyoError::EncodingError);
     }
 
     let reader = BufReader::new(utf8.as_bytes());
     parse(reader)
 }
 
-fn parse(reader: BufReader<&[u8]>) -> Result<CharClassDef, anyhow::Error> {
+fn parse(reader: BufReader<&[u8]>) -> Result<CharClassDef> {
     let mut char_class = Vec::new();
     let mut char_category = vec![0; 1 << 16];
     let mut invoke_map = Vec::new();
@@ -83,7 +84,10 @@ fn parse(reader: BufReader<&[u8]>) -> Result<CharClassDef, anyhow::Error> {
                 char_category[x as usize] = cc2id[cc];
             }
         } else {
-            bail!("Invalid format error: {}", line);
+            return Err(KanpyoError::InvalidFormat(format!(
+                "Invalid char.def format: {}",
+                line
+            )));
         }
     }
     Ok(CharClassDef {

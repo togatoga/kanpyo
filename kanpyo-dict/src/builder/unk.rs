@@ -1,7 +1,8 @@
 use std::{fs, path::Path};
 
-use anyhow::bail;
 use encoding_rs::Encoding;
+
+use crate::error::{KanpyoError, Result};
 
 /// UnkDefRecord represents a record in the unk.def file.
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
@@ -13,14 +14,11 @@ pub struct UnkDefRecord {
     pub features: Vec<String>,
 }
 
-pub fn parse_unk_def(
-    path: &Path,
-    encoding: &'static Encoding,
-) -> anyhow::Result<Vec<UnkDefRecord>> {
+pub fn parse_unk_def(path: &Path, encoding: &'static Encoding) -> Result<Vec<UnkDefRecord>> {
     let byte = fs::read(path)?;
     let (utf8, _, had_errors) = encoding.decode(&byte);
     if had_errors {
-        bail!("Failed to decode");
+        return Err(KanpyoError::EncodingError);
     }
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
@@ -28,7 +26,7 @@ pub fn parse_unk_def(
     parse(&mut reader)
 }
 
-fn parse(reader: &mut csv::Reader<&[u8]>) -> anyhow::Result<Vec<UnkDefRecord>> {
+fn parse(reader: &mut csv::Reader<&[u8]>) -> Result<Vec<UnkDefRecord>> {
     let mut records = Vec::new();
     for result in reader.records() {
         let record = result?;

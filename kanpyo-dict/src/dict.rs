@@ -4,6 +4,7 @@ use std::io::Write;
 
 use crate::char_category_def;
 use crate::connection;
+use crate::error::Result;
 use crate::index;
 use crate::morph;
 use crate::morph_feature;
@@ -47,7 +48,7 @@ impl Dict {
         }
     }
 
-    pub fn build<W: Write + Seek>(&self, f: &mut W) -> anyhow::Result<()> {
+    pub fn build<W: Write + Seek>(&self, f: &mut W) -> Result<()> {
         let mut zip = zip::ZipWriter::new(f);
         let options = zip::write::SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Deflated)
@@ -66,7 +67,7 @@ impl Dict {
         self.unk_dict.write_dict(&mut zip)?;
         Ok(())
     }
-    pub fn load<R: Read + Seek>(r: &mut R) -> anyhow::Result<Self> {
+    pub fn load<R: Read + Seek>(r: &mut R) -> Result<Self> {
         let mut zip = zip::ZipArchive::new(r)?;
         let morphs = {
             let morph_dict = zip.by_name("morph.dict")?;

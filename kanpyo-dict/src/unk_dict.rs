@@ -1,8 +1,12 @@
 use std::collections::BTreeMap;
 
-use anyhow::bail;
-
-use crate::{builder::unk, dict::DictReadWrite, morph, morph_feature, trie::da::KeywordID};
+use crate::{
+    builder::unk,
+    dict::DictReadWrite,
+    error::{KanpyoError, Result},
+    morph, morph_feature,
+    trie::da::KeywordID,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnkDict {
@@ -12,17 +16,14 @@ pub struct UnkDict {
 }
 
 impl UnkDict {
-    pub fn build(
-        mut records: Vec<unk::UnkDefRecord>,
-        char_class: &[String],
-    ) -> anyhow::Result<Self> {
+    pub fn build(mut records: Vec<unk::UnkDefRecord>, char_class: &[String]) -> Result<Self> {
         records.sort();
         let mut morphs = morph::Morphs::new();
         let mut feature_table_builder = morph_feature::MorphFeatureTableBuilder::default();
         let mut char_category_to_morph_id = BTreeMap::new();
         for (morph_id, record) in records.iter().enumerate() {
             if record.cost > i16::MAX as i64 {
-                bail!("Cost is too large: {}", record.cost);
+                return Err(KanpyoError::CostOutOfRange(record.cost));
             }
             morphs.push(
                 record.left_id as i16,
@@ -33,7 +34,7 @@ impl UnkDict {
             let char_category = char_class
                 .iter()
                 .position(|s| s == &record.category)
-                .ok_or_else(|| anyhow::anyhow!("char category not found"))?
+                .ok_or_else(|| KanpyoError::CharCategoryNotFound(record.category.clone()))?
                 as u8;
             char_category_to_morph_id
                 .entry(char_category)

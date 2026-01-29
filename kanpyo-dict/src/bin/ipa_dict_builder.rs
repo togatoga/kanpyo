@@ -1,5 +1,5 @@
 use clap::{Parser, ValueEnum};
-use kanpyo_dict::builder::{config::Config, DictionaryBuilder};
+use kanpyo_dict::builder::{DictionaryBuilder, config::Config};
 
 use std::path::PathBuf;
 

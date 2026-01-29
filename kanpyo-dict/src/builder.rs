@@ -1,11 +1,15 @@
 use std::{fs, path::PathBuf};
 
-use anyhow::{Context, Result};
 use itertools::Itertools;
 use unk::parse_unk_def;
 
 use crate::{
-    char_category_def::CharCategoryDef, connection::ConnectionTable, dict, index, morph::Morphs,
+    char_category_def::CharCategoryDef,
+    connection::ConnectionTable,
+    dict,
+    error::{KanpyoError, Result},
+    index,
+    morph::Morphs,
     morph_feature, unk_dict,
 };
 
@@ -22,7 +26,12 @@ pub struct DictionaryBuilder {}
 impl DictionaryBuilder {
     fn collect_csv_files(config: &Config) -> Result<Vec<PathBuf>> {
         let csv_files = fs::read_dir(config.root_path)
-            .with_context(|| format!("Failed to read directory: {:?}", config.root_path))?
+            .map_err(|e| {
+                KanpyoError::Io(std::io::Error::new(
+                    e.kind(),
+                    format!("Failed to read directory: {:?}", config.root_path),
+                ))
+            })?
             .filter_map(|entry| {
                 let path = entry.ok()?.path();
                 path.extension()
@@ -34,7 +43,7 @@ impl DictionaryBuilder {
         Ok(csv_files)
     }
 
-    pub fn from_config(config: &Config) -> Result<dict::Dict, anyhow::Error> {
+    pub fn from_config(config: &Config) -> Result<dict::Dict> {
         let csv_files = Self::collect_csv_files(config)?;
 
         let sorted_records = csv_files

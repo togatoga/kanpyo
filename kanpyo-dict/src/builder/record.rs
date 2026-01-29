@@ -1,6 +1,7 @@
-use anyhow::bail;
 use encoding_rs::Encoding;
 use std::{fs, path::Path};
+
+use crate::error::{KanpyoError, Result};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 /// Record represents a record in the CSV file.
 pub struct Record {
@@ -17,11 +18,11 @@ pub struct Record {
     pub user_data: Vec<String>,
 }
 
-pub fn parse_csv(path: &Path, encoding: &'static Encoding) -> anyhow::Result<Vec<Record>> {
+pub fn parse_csv(path: &Path, encoding: &'static Encoding) -> Result<Vec<Record>> {
     let byte = fs::read(path)?;
     let (utf8, _, had_errors) = encoding.decode(&byte);
     if had_errors {
-        bail!("Failed to decode");
+        return Err(KanpyoError::EncodingError);
     }
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
