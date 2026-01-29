@@ -5,6 +5,9 @@ edition = "2024"
 exclude = ["resource/"]
 description = "Dictionary Library for Kanpyo"
 license = "MIT"
+repository = "https://github.com/togatoga/kanpyo"
+homepage = "https://github.com/togatoga/kanpyo"
+documentation = "https://docs.rs/kanpyo-dict"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]

@@ -7,6 +7,9 @@ description = "Japanese Morphological Analyzer"
 keywords = ["japanese", "morphological", "analyzer"]
 categories = ["text-processing", "natural-language-processing"]
 license = "MIT"
+repository = "https://github.com/togatoga/kanpyo"
+homepage = "https://github.com/togatoga/kanpyo"
+documentation = "https://docs.rs/kanpyo"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
