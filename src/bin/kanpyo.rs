@@ -88,7 +88,7 @@ impl KanpyoCommand {
         #[cfg(feature = "mecab-ipadic")]
         {
             let mut cursor = std::io::Cursor::new(EMBEDDED_DICT);
-            return dict::Dict::load(&mut cursor).expect("failed to load embedded dict");
+            dict::Dict::load(&mut cursor).expect("failed to load embedded dict")
         }
 
         // Fall back to file-based dictionary
