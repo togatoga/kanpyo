@@ -3,6 +3,9 @@ use kanpyo::{lattice::node::BOS_EOS_ID, tokenizer::Tokenizer};
 use kanpyo_dict::dict;
 use std::path::PathBuf;
 
+#[cfg(feature = "mecab-ipadic")]
+static EMBEDDED_DICT: &[u8] = include_bytes!(env!("KANPYO_MECAB_IPADIC_PATH"));
+
 #[derive(Parser)]
 #[command(name = "kanpyo", about = "Japanese Morphological Analyzer", version = "0.1", long_about=None)]
 struct KanpyoCommand {
@@ -51,6 +54,7 @@ enum Dict {
     // Unidic,
 }
 
+#[cfg(not(feature = "mecab-ipadic"))]
 fn get_dict_path(dict: Dict) -> PathBuf {
     let mut path = dirs::config_dir()
         .expect("failed to get config dir")
@@ -66,12 +70,37 @@ fn get_dict_path(dict: Dict) -> PathBuf {
 }
 
 impl KanpyoCommand {
-    fn tokenizer(dict: Dict, custom_dict: Option<PathBuf>) -> Tokenizer {
-        let dict_file = custom_dict.unwrap_or_else(|| get_dict_path(dict));
-        let mut reader = std::io::BufReader::new(
-            std::fs::File::open(dict_file).expect("failed to open custom dict"),
-        );
-        Tokenizer::new(dict::Dict::load(&mut reader).expect("failed to load dict"))
+    fn tokenizer(dict_type: Dict, custom_dict: Option<PathBuf>) -> Tokenizer {
+        let dict = if let Some(custom_path) = custom_dict {
+            // Use custom dictionary from file
+            let mut reader = std::io::BufReader::new(
+                std::fs::File::open(custom_path).expect("failed to open custom dict"),
+            );
+            dict::Dict::load(&mut reader).expect("failed to load dict")
+        } else {
+            Self::load_default_dict(dict_type)
+        };
+        Tokenizer::new(dict)
+    }
+
+    fn load_default_dict(_dict_type: Dict) -> dict::Dict {
+        // Try embedded dictionary first (if compiled with embed-dict feature)
+        #[cfg(feature = "mecab-ipadic")]
+        {
+            let mut cursor = std::io::Cursor::new(EMBEDDED_DICT);
+            return dict::Dict::load(&mut cursor).expect("failed to load embedded dict");
+        }
+
+        // Fall back to file-based dictionary
+        #[cfg(not(feature = "mecab-ipadic"))]
+        {
+            let dict_file = get_dict_path(_dict_type);
+            let mut reader = std::io::BufReader::new(
+                std::fs::File::open(&dict_file)
+                    .unwrap_or_else(|_| panic!("failed to open dict file: {:?}", dict_file)),
+            );
+            dict::Dict::load(&mut reader).expect("failed to load dict")
+        }
     }
 
     fn tokenize(input: Option<String>, dict: Dict, custom_dict: Option<PathBuf>) {

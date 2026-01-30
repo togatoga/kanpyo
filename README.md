@@ -10,19 +10,31 @@ This is a work in progress. I would break the API without notice.
 
 ## Installation
 
-You can install `kanpyo` via `cargo` or `git`(development version).
+### With Embedded Dictionary (Recommended)
+
+The easiest way to install `kanpyo` is with the embedded dictionary. No additional setup required.
+
+```shell script
+cargo install kanpyo --features mecab-ipadic
+```
+
+or from git:
+
+```shell script
+cargo install --git https://github.com/togatoga/kanpyo kanpyo --features mecab-ipadic
+```
+
+The dictionary will be automatically downloaded from GitHub Releases during the build process and embedded into the binary.
+
+### Without Embedded Dictionary
+
+If you prefer a smaller binary size or want to use a custom dictionary:
 
 ```shell script
 cargo install kanpyo
 ```
 
-or
-
-```shell script
-cargo install --git https://github.com/togatoga/kanpyo kanpyo
-```
-
-You need a dictionary to use `kanpyo` and can build and install a dictionary by the following.
+You need to build and install a dictionary manually:
 
 ```shell script
 cd kanpyo-dict
@@ -30,12 +42,11 @@ tar xvf resource/mecab-ipadic-2.7.0-20070801.tar.gz -C resource
 cargo run --release --bin ipa-dict-builder -- --dict resource/mecab-ipadic-2.7.0-20070801
 ```
 
-A dictionary is installed in the following directory:
+The dictionary is installed in the following directory:
 
-- Linux
-  - $HOME/.config/kanpyo/
-- macOS
-  - $HOME/Library/Application Support/kanpyo
+- Linux: `$HOME/.config/kanpyo/`
+- macOS: `$HOME/Library/Application Support/kanpyo/`
+- Windows: `%APPDATA%\kanpyo\`
 
 You're ready to use `kanpyo`!
 

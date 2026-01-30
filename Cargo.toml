@@ -3,6 +3,7 @@ name = "kanpyo"
 version = "0.2.0"
 edition = "2024"
 exclude = ["kanpyo-dict/"]
+build = "build.rs"
 description = "Japanese Morphological Analyzer"
 keywords = ["japanese", "morphological", "analyzer"]
 categories = ["text-processing", "natural-language-processing"]
@@ -10,6 +11,10 @@ license = "MIT"
 repository = "https://github.com/togatoga/kanpyo"
 homepage = "https://github.com/togatoga/kanpyo"
 documentation = "https://docs.rs/kanpyo"
+
+[features]
+default = []
+mecab-ipadic = []  # Embed MeCab IPA dictionary into binary
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
