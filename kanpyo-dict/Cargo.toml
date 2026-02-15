@@ -24,4 +24,4 @@ itertools = "0.14.0"
 regex = "1.10.5"
 serde = { version = "1.0.203", features = ["derive"] }
 thiserror = "2.0.9"
-zip = "7.0.0"
+zip = "8.0.0"
